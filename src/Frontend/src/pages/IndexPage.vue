@@ -43,6 +43,22 @@ const mailHeaderParts = computed(() => {
   return formattedHeader
 })
 
+const from = computed(() => {
+  return mailHeaderParts.value?.filter(header => header.headerName === 'From')
+})
+
+const to = computed(() => {
+  return mailHeaderParts.value?.filter(header => header.headerName === 'To')
+})
+
+const subject = computed(() => {
+  return mailHeaderParts.value?.filter(header => header.headerName === 'Subject')
+})
+
+const receivedHeaders = computed(() => {
+  return mailHeaderParts.value?.filter(header => header.headerName === 'Received')
+})
+
 function decodeHeaderField (field: string): HeaderDetails {
   const rawHeaderField = field.replace(/=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi, (_, charset, encoding, encodedText) => {
     if (encoding.toUpperCase() === 'B') {
@@ -77,17 +93,55 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
 
 <template>
   <q-page padding>
-    <q-input
-      v-model="mailHeader"
-      outlined
-      type="textarea"
-    />
+    <div>
+      <q-input
+        v-model="mailHeader"
+        outlined
+        type="textarea"
+      />
+    </div>
+
+    <div class="q-my-md">
+      <div class="row q-col-gutter-sm">
+        <div v-if="from">
+          <div class="q-pa-sm col-2 bg-blue text-white">
+            {{ from[0].headerData }}
+          </div>
+        </div>
+        <div v-if="to">
+          <div class="q-pa-sm col-2 bg-blue text-white">
+            {{ to[0].headerData }}
+          </div>
+        </div>
+        <div v-if="subject">
+          <div class="q-pa-sm col-2 bg-blue text-white">
+            {{ subject[0].headerData }}
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="receivedHeaders"
+        class="q-mt-sm"
+      >
+        <div>
+          <div
+            v-for="received in receivedHeaders"
+            :key="received.headerData"
+            class="q-pa-sm col-2 bg-grey text-white q-mb-sm"
+          >
+            {{ received.headerData }}
+          </div>
+        </div>
+      </div>
+    </div>
 
     <q-list separator>
       <q-item
         v-for="(header, index) in mailHeaderParts"
         :key="index"
         dense
+        class="q-pa-none"
       >
         <q-item-section
           no-wrap
