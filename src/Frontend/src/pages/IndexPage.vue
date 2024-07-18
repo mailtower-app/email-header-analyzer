@@ -132,8 +132,6 @@ const receivedHeaders = computed(() => {
   }
   const filteredHeaders = mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.Received)
 
-  console.log(filteredHeaders?.length)
-
   if (!filteredHeaders) {
     return undefined
   }
@@ -157,6 +155,18 @@ const otherHeaders = computed(() => {
   }
   return filteredHeaders
 })
+
+function splitMailHeaderDomainIpAddress (receiveHeader : string) : string[] {
+  const indexOfOpeningRoundClamp = receiveHeader.indexOf('(')
+  if (indexOfOpeningRoundClamp === -1) {
+    return [receiveHeader]
+  }
+
+  const hostname = receiveHeader.slice(0, indexOfOpeningRoundClamp).trim()
+  const ipAddress = receiveHeader.slice(indexOfOpeningRoundClamp + 1, receiveHeader.indexOf(')')).trim()
+
+  return [hostname, ipAddress]
+}
 
 function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts {
   const textPartFrom = 'from'
@@ -200,7 +210,11 @@ function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts
     return result
   }
 
-  result.fromDomain = tempHeader.slice(dataStartIndexFrom, startIndexBy - 1)
+  const tempFrom = tempHeader.slice(dataStartIndexFrom, startIndexBy - 1)
+  const fromParts = splitMailHeaderDomainIpAddress(tempFrom)
+
+  result.fromDomain = fromParts[0]
+  result.fromIpAddress = fromParts[1]
 
   const dataStartIndexBy = startIndexBy + textPartBy.length + 1
 
@@ -211,7 +225,11 @@ function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts
     return result
   }
 
-  result.byDomain = tempHeader.slice(dataStartIndexBy, startIndexWith - 1)
+  const tempBy = tempHeader.slice(dataStartIndexBy, startIndexWith - 1)
+  const byParts = splitMailHeaderDomainIpAddress(tempBy)
+
+  result.byDomain = byParts[0]
+  result.byIpAddress = byParts[1]
 
   const dataStartIndexWith = startIndexWith + textPartWith.length + 1
   let dataEndIndexWith = tempHeader.length
@@ -295,6 +313,20 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
   return new TextDecoder(charset).decode(new Uint8Array([...decodedText].map(char => char.charCodeAt(0))))
 }
 
+function svgReceiveTranslate (index: number) : string {
+  const maxItemsPerRow = 6
+  const boxWidth = 105
+  const boxHeight = 55
+
+  const factor = Math.floor(index / maxItemsPerRow)
+  const y = factor * boxHeight
+
+  const xReset = factor * maxItemsPerRow * boxWidth
+  const x = (index * boxWidth) - xReset
+
+  return `translate(${x}, ${y})`
+}
+
 </script>
 
 <template>
@@ -309,7 +341,7 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
     </div>
 
     <div class="row">
-      <div class="col-9">
+      <div class="col-8">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           xml:space="preserve"
@@ -382,7 +414,7 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
           </g>
         </svg>
       </div>
-      <div class="col-3">
+      <div class="col-4">
         <div class="q-my-md">
           <div class="q-gutter-sm">
             <div
@@ -528,6 +560,45 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
         v-if="receivedHeaders"
         class="q-mt-sm"
       >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          xml:space="preserve"
+          width="100%"
+          height="300"
+          version="1.1"
+          viewBox="0 0 1000 100"
+        >
+          <g
+            v-for="(received, index) in receivedHeaders"
+            :key="index"
+            :transform="svgReceiveTranslate(index)"
+          >
+            <path
+              d="M 0 0 H 10 V 10 H 0 Z"
+              style="fill:gray;"
+            />
+            <text
+              x="4"
+              y="6"
+              style="font:normal 4px sans-serif; fill: #fff;"
+            >{{ index }}</text>
+            <path
+              d="M 0 0 H 100 V 50 H 0 Z"
+              style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1;stroke-linejoin:round;stroke-linecap:butt;paint-order:markers stroke fill"
+            />
+            <text
+              x="4"
+              y="20"
+              style="font:normal 4px sans-serif; fill: #666;"
+            >{{ received.byDomain }}</text>
+            <text
+              x="4"
+              y="26"
+              style="font:normal 4px sans-serif; fill: #666;"
+            >{{ received.byIpAddress }}</text>
+          </g>
+        </svg>
+
         <div>
           <div
             v-for="(received, index) in receivedHeaders"
@@ -538,7 +609,7 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
           </div>
         </div>
       </div>
-
+      <!--
       <q-table
         v-if="otherHeaders"
         flat
@@ -562,7 +633,7 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
             </template>
           </q-input>
         </template>
-      </q-table>
+      </q-table> -->
     </div>
   </q-page>
 </template>
