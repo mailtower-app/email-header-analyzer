@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { QTableProps } from 'quasar'
 
 interface HeaderDetails {
   headerName: string
@@ -32,6 +33,32 @@ const MailHeaders = {
 
 const mailHeader = ref<string>()
 const filter = ref<string | undefined>()
+
+const columns : QTableProps['columns'] = [
+  {
+    name: 'headerName',
+    align: 'left',
+    label: 'Name',
+    field: 'headerName',
+    sortable: false,
+    style: 'width: 300px'
+  },
+  {
+    name: 'headerData',
+    align: 'left',
+    label: 'Data',
+    field: 'headerData',
+    sortable: false
+  },
+  {
+    name: 'headerIndex',
+    align: 'left',
+    label: 'Index',
+    field: 'headerIndex',
+    sortable: false,
+    style: 'width: 70px'
+  }
+]
 
 const mailHeaderParts = computed(() => {
   const lines = mailHeader.value?.split(/\r?\n/)
@@ -315,8 +342,8 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
 
 function svgReceiveTranslate (index: number) : string {
   const maxItemsPerRow = 6
-  const boxWidth = 105
-  const boxHeight = 55
+  const boxWidth = 115
+  const boxHeight = 45
 
   const factor = Math.floor(index / maxItemsPerRow)
   const y = factor * boxHeight
@@ -566,7 +593,7 @@ function svgReceiveTranslate (index: number) : string {
           width="100%"
           height="300"
           version="1.1"
-          viewBox="0 0 1000 100"
+          viewBox="0 0 700 100"
         >
           <g
             v-for="(received, index) in receivedHeaders"
@@ -583,7 +610,7 @@ function svgReceiveTranslate (index: number) : string {
               style="font:normal 4px sans-serif; fill: #fff;"
             >{{ index }}</text>
             <path
-              d="M 0 0 H 100 V 50 H 0 Z"
+              d="M 0 0 H 110 V 40 H 0 Z"
               style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1;stroke-linejoin:round;stroke-linecap:butt;paint-order:markers stroke fill"
             />
             <text
@@ -599,7 +626,7 @@ function svgReceiveTranslate (index: number) : string {
           </g>
         </svg>
 
-        <div>
+        <!-- <div>
           <div
             v-for="(received, index) in receivedHeaders"
             :key="index"
@@ -607,9 +634,9 @@ function svgReceiveTranslate (index: number) : string {
           >
             <pre style="margin: 0px;">{{ received }}</pre>
           </div>
-        </div>
+        </div> -->
       </div>
-      <!--
+
       <q-table
         v-if="otherHeaders"
         flat
@@ -617,6 +644,7 @@ function svgReceiveTranslate (index: number) : string {
         wrap-cells
         :rows-per-page-options="[0]"
         :rows="otherHeaders"
+        :columns="columns"
       >
         <template #top>
           <q-input
@@ -633,7 +661,13 @@ function svgReceiveTranslate (index: number) : string {
             </template>
           </q-input>
         </template>
-      </q-table> -->
+      </q-table>
     </div>
   </q-page>
 </template>
+
+<style scoped>
+.word-break {
+  word-break: break-all;
+}
+</style>
