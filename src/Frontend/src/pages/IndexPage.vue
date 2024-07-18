@@ -391,13 +391,22 @@ function svgReceiveTranslate (index: number) : string {
             d="M5.48 15.94c.12-.3 0-14.43 0-14.43H20.5l6.15 6.15v8.13"
             style="fill:none;stroke:#666666;stroke-width:.8;"
           /><path
+            d="M7 12 20 12 Z"
+            style="fill:none;stroke:#CCCCCC;stroke-width:.3;"
+          /><path
+            d="M7 14 24 14 Z"
+            style="fill:none;stroke:#CCCCCC;stroke-width:.3;"
+          /><path
+            d="M7 16 24 16 Z"
+            style="fill:none;stroke:#CCCCCC;stroke-width:.3;"
+          /><path
             d="m11.6 20.16-9.17-6.61v16.87h27.1V13.66l-9.09 6.5"
             style="fill:none;stroke:#263238;stroke-width:.8;stroke-linejoin:round;"
           /></g>
 
           <g
             id="letter"
-            transform="translate(0,-1.5)"
+            transform="translate(0,-2)"
           >
             <text
               x="7"
@@ -407,7 +416,7 @@ function svgReceiveTranslate (index: number) : string {
             <text
               x="7"
               y="6.8"
-              style="font:italic 0.8px sans-serif;"
+              style="font:normal 0.7px sans-serif;"
             >{{ from }}</text>
 
             <text
@@ -418,12 +427,12 @@ function svgReceiveTranslate (index: number) : string {
             <text
               x="7"
               y="8.5"
-              style="font:italic 0.8px sans-serif;"
+              style="font:normal 0.7px sans-serif;"
             >{{ to }}</text>
 
             <text
               x="7"
-              y="10.5"
+              y="12"
               style="font:normal 0.8px sans-serif; font-weight: bold;"
             >{{ subject }}</text>
           </g>
