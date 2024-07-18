@@ -652,8 +652,6 @@ function svgReceiveTranslate (index: number) : string {
         :rows-per-page-options="[0]"
         :rows="otherHeaders"
         :columns="columns"
-        title-class="header-table"
-        class
       >
         <template #top>
           <q-input
