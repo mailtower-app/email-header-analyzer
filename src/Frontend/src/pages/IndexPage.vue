@@ -7,15 +7,16 @@ interface HeaderDetails {
 }
 
 type ReceivedHeaderParts = {
-  fromDomain: string
+  rawData: string
+  fromDomain?: string
   fromIpAddress?: string
-  byDomain: string
+  byDomain?: string
   byIpAddress?: string
   via?: string
   with?: string
   id?: string
   for?: string
-  dateTime: string
+  dateTime?: Date
 }
 
 const MailHeaders = {
@@ -29,6 +30,7 @@ const MailHeaders = {
 }
 
 const mailHeader = ref<string>()
+const filter = ref<string | undefined>()
 
 const mailHeaderParts = computed(() => {
   const lines = mailHeader.value?.split(/\r?\n/)
@@ -90,61 +92,142 @@ const subjectHeaders = computed(() => {
 })
 
 const receivedHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.Received)
+  if (!mailHeaderParts.value) {
+    return undefined
+  }
+  const filteredHeaders = mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.Received)
+
+  console.log(filteredHeaders?.length)
+
+  if (!filteredHeaders) {
+    return undefined
+  }
+
+  const receivedHeaders = filteredHeaders.filter(o => o.headerData).map(headerDetail => parseReceivedHeader(headerDetail.headerData))
+
+  receivedHeaders?.sort((a, b) => {
+    if (a.dateTime && b.dateTime) {
+      return a.dateTime.getTime() - b.dateTime.getTime()
+    }
+    return 0
+  })
+  return receivedHeaders
 })
 
 const otherHeaders = computed(() => {
-  const test = Object.values(MailHeaders)
-  return mailHeaderParts.value?.filter(header => !test.includes(header.headerName))
+  const ignoreHeaderNames = Object.values(MailHeaders)
+  const filteredHeaders = mailHeaderParts.value?.filter(header => !ignoreHeaderNames.includes(header.headerName))
+  if (filter.value) {
+    return filteredHeaders?.filter(header => header.headerName.toLowerCase().includes(filter.value?.toLowerCase()))
+  }
+  return filteredHeaders
 })
 
-function parseReceivedHeader (header: string): ReceivedHeaderParts | string {
+function parseReceivedHeader (header: string): ReceivedHeaderParts {
   const fromTextPart = 'from'
   const byTextPart = 'by'
   const withTextPart = 'with'
+  const idTextPart = 'id'
+  const viaTextPart = 'via'
 
   const result : ReceivedHeaderParts = {
-    fromDomain: '',
-    byDomain: '',
-    dateTime: ''
+    rawData: header
   }
+
+  if (!header) {
+    console.log('Header is empty')
+    return result
+  }
+
+  console.log(header)
 
   let tempHeader = header
 
+  // Extract Date at the end
+
   const indexOfSemilicon = header.lastIndexOf(';')
   if (indexOfSemilicon !== -1) {
-    result.dateTime = header.slice(indexOfSemilicon + 1).trim()
+    const tempDate = header.slice(indexOfSemilicon + 1).trim()
+    result.dateTime = new Date(tempDate)
     tempHeader = header.slice(0, indexOfSemilicon)
   }
 
+  // Section - from
+
   const fromStartIndex = tempHeader.indexOf(`${fromTextPart} `)
   if (fromStartIndex === -1) {
-    return ''
+    return result
   }
 
   const fromDataStartIndex = fromStartIndex + fromTextPart.length + 1
 
+  // Section - by
+
   const byStartIndex = tempHeader.indexOf(`${byTextPart} `, fromDataStartIndex)
   if (byStartIndex === -1) {
-    return ''
+    return result
   }
 
   result.fromDomain = tempHeader.slice(fromDataStartIndex, byStartIndex - 1)
 
   const byDataStartIndex = byStartIndex + byTextPart.length + 1
 
+  // Section - with
+
   const withStartIndex = tempHeader.indexOf(`${withTextPart} `, byDataStartIndex)
   if (withStartIndex === -1) {
-    return ''
+    return result
   }
 
   result.byDomain = tempHeader.slice(byDataStartIndex, withStartIndex - 1)
 
   const withDataStartIndex = withStartIndex + withTextPart.length + 1
+  let withDataEndIndex = tempHeader.length
 
-  result.with = tempHeader.slice(withDataStartIndex, tempHeader.length)
+  // Prepare for optional
 
-  // Todo: Id, via split
+  let nextSearchStartIndex = withDataStartIndex
+
+  // Section - id
+
+  const idStartIndex = tempHeader.indexOf(`${idTextPart} `, nextSearchStartIndex)
+  let idDataStartIndex = 0
+  let idDataEndIndex = 0
+  if (idStartIndex !== -1) {
+    idDataStartIndex = idStartIndex + idTextPart.length + 1
+    nextSearchStartIndex = idDataStartIndex
+
+    withDataEndIndex = idStartIndex - 1
+  }
+
+  // Section - via
+
+  const viaStartIndex = tempHeader.indexOf(`${viaTextPart} `, nextSearchStartIndex)
+  let viaDataStartIndex = 0
+  let viaDataEndIndex = 0
+  if (viaStartIndex !== -1) {
+    viaDataStartIndex = viaStartIndex + viaTextPart.length + 1
+
+    nextSearchStartIndex = viaDataStartIndex
+
+    idDataEndIndex = viaStartIndex - 1
+
+    viaDataEndIndex = tempHeader.length
+  } else {
+    idDataEndIndex = tempHeader.length
+  }
+
+  // Extract data
+
+  if (withDataStartIndex > 0) {
+    result.with = tempHeader.slice(withDataStartIndex, withDataEndIndex)
+  }
+  if (idDataStartIndex > 0) {
+    result.id = tempHeader.slice(idDataStartIndex, idDataEndIndex)
+  }
+  if (viaDataStartIndex > 0) {
+    result.via = tempHeader.slice(viaDataStartIndex, viaDataEndIndex)
+  }
 
   return result
 }
@@ -163,7 +246,7 @@ function decodeHeaderField (field: string): HeaderDetails {
 
   return {
     headerName: rawHeaderField.slice(0, indexOfFirstColon),
-    headerData: rawHeaderField.slice(indexOfFirstColon + 1)
+    headerData: rawHeaderField.slice(indexOfFirstColon + 2)
   }
 }
 
@@ -195,7 +278,7 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
     <div class="q-my-md">
       <div class="row q-col-gutter-sm">
         <div
-          v-if="returnPathHeaders"
+          v-if="returnPathHeaders && returnPathHeaders.length > 0"
           class="col-2 relative-position"
         >
           <q-badge
@@ -210,7 +293,7 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
           </div>
         </div>
         <div
-          v-if="fromHeaders"
+          v-if="fromHeaders && fromHeaders.length > 0"
           class="col-2 relative-position"
         >
           <q-badge
@@ -225,7 +308,7 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
           </div>
         </div>
         <div
-          v-if="toHeaders"
+          v-if="toHeaders && toHeaders.length > 0"
           class="col-2 relative-position"
         >
           <q-badge
@@ -240,7 +323,7 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
           </div>
         </div>
         <div
-          v-if="messageIdHeaders"
+          v-if="messageIdHeaders && messageIdHeaders.length > 0"
           class="col-2 relative-position"
         >
           <q-badge
@@ -255,7 +338,7 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
           </div>
         </div>
         <div
-          v-if="dateHeaders"
+          v-if="dateHeaders && dateHeaders.length > 0"
           class="col-2 relative-position"
         >
           <q-badge
@@ -270,7 +353,7 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
           </div>
         </div>
         <div
-          v-if="subjectHeaders"
+          v-if="subjectHeaders && subjectHeaders.length > 0"
           class="col-2 relative-position"
         >
           <q-badge
@@ -306,13 +389,11 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
         >
           <div>
             <div
-              v-for="received in receivedHeaders"
-              :key="received.headerData"
+              v-for="(received, index) in receivedHeaders"
+              :key="index"
               class="q-pa-sm col-2 bg-grey text-white q-mb-sm"
             >
-              <pre>{{ parseReceivedHeader(received.headerData) ?? 'null' }}</pre>
-              <hr>
-              {{ received.headerData }}
+              <pre style="margin: 0px;">{{ received }}</pre>
             </div>
           </div>
         </div>
@@ -325,7 +406,23 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
         wrap-cells
         :rows-per-page-options="[0]"
         :rows="otherHeaders"
-      />
+      >
+        <template #top>
+          <q-input
+            v-model="filter"
+            outlined
+            dense
+            debounce="100"
+            placeholder="Search"
+            class="full-width"
+            :bg-color="filter ? 'grey-3' : ''"
+          >
+            <template #append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </template>
+      </q-table>
     </div>
   </q-page>
 </template>
