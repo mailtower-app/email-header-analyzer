@@ -48,7 +48,8 @@ const columns : QTableProps['columns'] = [
     align: 'left',
     label: 'Data',
     field: 'headerData',
-    sortable: false
+    sortable: false,
+    classes: 'text-break'
   },
   {
     name: 'headerIndex',
@@ -378,20 +379,20 @@ function svgReceiveTranslate (index: number) : string {
           viewBox="0 0 32 32"
         >
           <g id="mail"><path
-            d="M5.48 15.94c.12-.3 0-14.43 0-14.43H20.5l6.15 6.15v8.13"
-            style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1;stroke-linejoin:round;stroke-linecap:butt;paint-order:markers stroke fill"
-          /><path
-            d="m11.6 20.16-9.17-6.61v16.87h27.1V13.66l-9.09 6.5"
-            style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-          /><path
             d="m2.43 29.04 13.55-9.88 13.55 9.88"
-            style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1"
+            style="fill:none;stroke:#263238;stroke-width:.8;stroke-dasharray:none;"
           /><path
             d="m2.43 13.55 3.25-2.35"
-            style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1"
+            style="fill:none;stroke:#263238;stroke-width:.8;stroke-dasharray:none;"
           /><path
             d="m26.48 11.2 3.05 2.46"
-            style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1"
+            style="fill:none;stroke:#263238;stroke-width:.8;stroke-dasharray:none;"
+          /><path
+            d="M5.48 15.94c.12-.3 0-14.43 0-14.43H20.5l6.15 6.15v8.13"
+            style="fill:none;stroke:#666666;stroke-width:.8;"
+          /><path
+            d="m11.6 20.16-9.17-6.61v16.87h27.1V13.66l-9.09 6.5"
+            style="fill:none;stroke:#263238;stroke-width:.8;stroke-linejoin:round;"
           /></g>
 
           <g
@@ -608,10 +609,10 @@ function svgReceiveTranslate (index: number) : string {
               x="4"
               y="6"
               style="font:normal 4px sans-serif; fill: #fff;"
-            >{{ index }}</text>
+            >{{ index + 1 }}</text>
             <path
               d="M 0 0 H 110 V 40 H 0 Z"
-              style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1;stroke-linejoin:round;stroke-linecap:butt;paint-order:markers stroke fill"
+              style="fill:none;stroke:#263238;stroke-width:.8;"
             />
             <text
               x="4"
@@ -623,6 +624,12 @@ function svgReceiveTranslate (index: number) : string {
               y="26"
               style="font:normal 4px sans-serif; fill: #666;"
             >{{ received.byIpAddress }}</text>
+
+            <text
+              x="4"
+              y="32"
+              style="font:normal 4px sans-serif; fill: #666;"
+            >{{ received.with?.slice(0,50) }}</text>
           </g>
         </svg>
 
@@ -632,7 +639,7 @@ function svgReceiveTranslate (index: number) : string {
             :key="index"
             class="q-pa-sm col-2 bg-grey text-white q-mb-sm"
           >
-            <pre style="margin: 0px;">{{ received }}</pre>
+            <pre style="margin: 0px; white-space: pre-wrap;">{{ received }}</pre>
           </div>
         </div> -->
       </div>
@@ -645,6 +652,8 @@ function svgReceiveTranslate (index: number) : string {
         :rows-per-page-options="[0]"
         :rows="otherHeaders"
         :columns="columns"
+        title-class="header-table"
+        class
       >
         <template #top>
           <q-input
@@ -667,7 +676,7 @@ function svgReceiveTranslate (index: number) : string {
 </template>
 
 <style scoped>
-.word-break {
+:deep(.text-break) {
   word-break: break-all;
 }
 </style>
