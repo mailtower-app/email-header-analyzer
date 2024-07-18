@@ -369,12 +369,12 @@ function svgReceiveTranslate (index: number) : string {
     </div>
 
     <div class="row">
-      <div class="col-8">
+      <div class="col-12 col-md-8">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           xml:space="preserve"
           width="100%"
-          height="800"
+          height="600"
           version="1.1"
           viewBox="0 0 32 32"
         >
@@ -451,7 +451,7 @@ function svgReceiveTranslate (index: number) : string {
           </g>
         </svg>
       </div>
-      <div class="col-4">
+      <div class="col-12 col-md-4">
         <div class="q-my-md">
           <div class="q-gutter-sm">
             <div
@@ -465,7 +465,7 @@ function svgReceiveTranslate (index: number) : string {
               >
                 Return-Path
               </q-badge>
-              <div class="q-pa-sm bg-blue text-white">
+              <div class="q-pa-sm bg-grey text-white">
                 <div
                   v-for="(returnPathHeader, index) in returnPathHeaders"
                   :key="`returnPathHeader-${index}`"
@@ -485,7 +485,7 @@ function svgReceiveTranslate (index: number) : string {
               >
                 From
               </q-badge>
-              <div class="q-pa-sm bg-blue text-white">
+              <div class="q-pa-sm bg-grey text-white">
                 <div
                   v-for="(fromHeader, index) in fromHeaders"
                   :key="`fromHeader-${index}`"
@@ -505,7 +505,7 @@ function svgReceiveTranslate (index: number) : string {
               >
                 To
               </q-badge>
-              <div class="q-pa-sm bg-blue text-white">
+              <div class="q-pa-sm bg-grey text-white">
                 <div
                   v-for="(toHeader, index) in toHeaders"
                   :key="`toHeader-${index}`"
@@ -525,7 +525,7 @@ function svgReceiveTranslate (index: number) : string {
               >
                 Message-Id
               </q-badge>
-              <div class="q-pa-sm bg-blue text-white">
+              <div class="q-pa-sm bg-grey text-white">
                 <div
                   v-for="(messageIdHeader, index) in messageIdHeaders"
                   :key="`messageIdHeader-${index}`"
@@ -545,7 +545,7 @@ function svgReceiveTranslate (index: number) : string {
               >
                 Date
               </q-badge>
-              <div class="q-pa-sm bg-blue text-white">
+              <div class="q-pa-sm bg-grey text-white">
                 <div
                   v-for="(dateHeader, index) in dateHeaders"
                   :key="`dateHeader-${index}`"
@@ -565,7 +565,7 @@ function svgReceiveTranslate (index: number) : string {
               >
                 Subject
               </q-badge>
-              <div class="q-pa-sm bg-blue text-white">
+              <div class="q-pa-sm bg-grey text-white">
                 <div
                   v-for="(subjectHeader, index) in subjectHeaders"
                   :key="`subjectHeader-${index}`"
@@ -585,7 +585,7 @@ function svgReceiveTranslate (index: number) : string {
               >
                 Total Headers
               </q-badge>
-              <div class="q-pa-sm bg-blue text-white">
+              <div class="q-pa-sm bg-grey text-white">
                 {{ mailHeaderParts?.length }}
               </div>
             </div>
