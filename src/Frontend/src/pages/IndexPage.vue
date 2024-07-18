@@ -4,10 +4,11 @@ import { ref, computed } from 'vue'
 interface HeaderDetails {
   headerName: string
   headerData: string
+  headerIndex: number
 }
 
 type ReceivedHeaderParts = {
-  rawData: string
+  rawHeaderDetails: HeaderDetails
   fromDomain?: string
   fromIpAddress?: string
   byDomain?: string
@@ -40,6 +41,7 @@ const mailHeaderParts = computed(() => {
 
   const formattedHeader = []
   let currentLine = ''
+  let headerIndex = 0
 
   for (const line of lines) {
     if (!line) {
@@ -52,7 +54,8 @@ const mailHeaderParts = computed(() => {
     } else {
       // Line is a new header field
       if (currentLine) {
-        formattedHeader.push(decodeHeaderField(currentLine))
+        formattedHeader.push(decodeHeaderField(currentLine, headerIndex))
+        headerIndex++
       }
       currentLine = line
     }
@@ -60,7 +63,7 @@ const mailHeaderParts = computed(() => {
 
   // Push the last accumulated line
   if (currentLine) {
-    formattedHeader.push(decodeHeaderField(currentLine))
+    formattedHeader.push(decodeHeaderField(currentLine, headerIndex))
   }
 
   // Join the formatted header lines with new lines
@@ -103,13 +106,13 @@ const receivedHeaders = computed(() => {
     return undefined
   }
 
-  const receivedHeaders = filteredHeaders.filter(o => o.headerData).map(headerDetail => parseReceivedHeader(headerDetail.headerData))
+  const receivedHeaders = filteredHeaders.filter(o => o.headerData).map(headerDetail => parseReceivedHeader(headerDetail))
 
   receivedHeaders?.sort((a, b) => {
-    if (a.dateTime && b.dateTime) {
-      return a.dateTime.getTime() - b.dateTime.getTime()
+    if (a.rawHeaderDetails.headerIndex && b.rawHeaderDetails.headerIndex) {
+      return b.rawHeaderDetails.headerIndex - a.rawHeaderDetails.headerIndex
     }
-    return 0
+    return -1
   })
   return receivedHeaders
 })
@@ -123,7 +126,7 @@ const otherHeaders = computed(() => {
   return filteredHeaders
 })
 
-function parseReceivedHeader (header: string): ReceivedHeaderParts {
+function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts {
   const fromTextPart = 'from'
   const byTextPart = 'by'
   const withTextPart = 'with'
@@ -131,25 +134,22 @@ function parseReceivedHeader (header: string): ReceivedHeaderParts {
   const viaTextPart = 'via'
 
   const result : ReceivedHeaderParts = {
-    rawData: header
+    rawHeaderDetails: headerDetails
   }
 
-  if (!header) {
-    console.log('Header is empty')
+  if (!headerDetails.headerData) {
     return result
   }
 
-  console.log(header)
-
-  let tempHeader = header
+  let tempHeader = headerDetails.headerData
 
   // Extract Date at the end
 
-  const indexOfSemilicon = header.lastIndexOf(';')
+  const indexOfSemilicon = headerDetails.headerData.lastIndexOf(';')
   if (indexOfSemilicon !== -1) {
-    const tempDate = header.slice(indexOfSemilicon + 1).trim()
+    const tempDate = headerDetails.headerData.slice(indexOfSemilicon + 1).trim()
     result.dateTime = new Date(tempDate)
-    tempHeader = header.slice(0, indexOfSemilicon)
+    tempHeader = headerDetails.headerData.slice(0, indexOfSemilicon)
   }
 
   // Section - from
@@ -232,7 +232,7 @@ function parseReceivedHeader (header: string): ReceivedHeaderParts {
   return result
 }
 
-function decodeHeaderField (field: string): HeaderDetails {
+function decodeHeaderField (field: string, headerIndex: number): HeaderDetails {
   const rawHeaderField = field.replace(/=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi, (_, charset, encoding, encodedText) => {
     if (encoding.toUpperCase() === 'B') {
       return decodeBase64(encodedText, charset)
@@ -246,7 +246,8 @@ function decodeHeaderField (field: string): HeaderDetails {
 
   return {
     headerName: rawHeaderField.slice(0, indexOfFirstColon),
-    headerData: rawHeaderField.slice(indexOfFirstColon + 2)
+    headerData: rawHeaderField.slice(indexOfFirstColon + 2),
+    headerIndex
   }
 }
 
