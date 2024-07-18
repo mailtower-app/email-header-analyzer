@@ -74,12 +74,36 @@ const returnPathHeaders = computed(() => {
   return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.ReturnPath)
 })
 
+const returnPath = computed(() => {
+  if (!returnPathHeaders.value) {
+    return undefined
+  }
+
+  return returnPathHeaders.value[0].headerData
+})
+
 const fromHeaders = computed(() => {
   return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.From)
 })
 
+const from = computed(() => {
+  if (!fromHeaders.value) {
+    return undefined
+  }
+
+  return fromHeaders.value[0].headerData
+})
+
 const toHeaders = computed(() => {
   return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.To)
+})
+
+const to = computed(() => {
+  if (!toHeaders.value) {
+    return undefined
+  }
+
+  return toHeaders.value[0].headerData
 })
 
 const dateHeaders = computed(() => {
@@ -92,6 +116,14 @@ const messageIdHeaders = computed(() => {
 
 const subjectHeaders = computed(() => {
   return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.Subject)
+})
+
+const subject = computed(() => {
+  if (!subjectHeaders.value) {
+    return undefined
+  }
+
+  return subjectHeaders.value[0].headerData
 })
 
 const receivedHeaders = computed(() => {
@@ -127,11 +159,11 @@ const otherHeaders = computed(() => {
 })
 
 function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts {
-  const fromTextPart = 'from'
-  const byTextPart = 'by'
-  const withTextPart = 'with'
-  const idTextPart = 'id'
-  const viaTextPart = 'via'
+  const textPartFrom = 'from'
+  const textPartBy = 'by'
+  const textPartWith = 'with'
+  const textPartId = 'id'
+  const textPartVia = 'via'
 
   const result : ReceivedHeaderParts = {
     rawHeaderDetails: headerDetails
@@ -154,79 +186,79 @@ function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts
 
   // Section - from
 
-  const fromStartIndex = tempHeader.indexOf(`${fromTextPart} `)
-  if (fromStartIndex === -1) {
+  const startIndexFrom = tempHeader.indexOf(`${textPartFrom} `)
+  if (startIndexFrom === -1) {
     return result
   }
 
-  const fromDataStartIndex = fromStartIndex + fromTextPart.length + 1
+  const dataStartIndexFrom = startIndexFrom + textPartFrom.length + 1
 
   // Section - by
 
-  const byStartIndex = tempHeader.indexOf(`${byTextPart} `, fromDataStartIndex)
-  if (byStartIndex === -1) {
+  const startIndexBy = tempHeader.indexOf(`${textPartBy} `, dataStartIndexFrom)
+  if (startIndexBy === -1) {
     return result
   }
 
-  result.fromDomain = tempHeader.slice(fromDataStartIndex, byStartIndex - 1)
+  result.fromDomain = tempHeader.slice(dataStartIndexFrom, startIndexBy - 1)
 
-  const byDataStartIndex = byStartIndex + byTextPart.length + 1
+  const dataStartIndexBy = startIndexBy + textPartBy.length + 1
 
   // Section - with
 
-  const withStartIndex = tempHeader.indexOf(`${withTextPart} `, byDataStartIndex)
-  if (withStartIndex === -1) {
+  const startIndexWith = tempHeader.indexOf(`${textPartWith} `, dataStartIndexBy)
+  if (startIndexWith === -1) {
     return result
   }
 
-  result.byDomain = tempHeader.slice(byDataStartIndex, withStartIndex - 1)
+  result.byDomain = tempHeader.slice(dataStartIndexBy, startIndexWith - 1)
 
-  const withDataStartIndex = withStartIndex + withTextPart.length + 1
-  let withDataEndIndex = tempHeader.length
+  const dataStartIndexWith = startIndexWith + textPartWith.length + 1
+  let dataEndIndexWith = tempHeader.length
 
   // Prepare for optional
 
-  let nextSearchStartIndex = withDataStartIndex
+  let startIndexNextSearch = dataStartIndexWith
 
   // Section - id
 
-  const idStartIndex = tempHeader.indexOf(`${idTextPart} `, nextSearchStartIndex)
-  let idDataStartIndex = 0
-  let idDataEndIndex = 0
-  if (idStartIndex !== -1) {
-    idDataStartIndex = idStartIndex + idTextPart.length + 1
-    nextSearchStartIndex = idDataStartIndex
+  const startIndexId = tempHeader.indexOf(`${textPartId} `, startIndexNextSearch)
+  let dataStartIndexId = 0
+  let dataEndIndexId = 0
+  if (startIndexId !== -1) {
+    dataStartIndexId = startIndexId + textPartId.length + 1
+    startIndexNextSearch = dataStartIndexId
 
-    withDataEndIndex = idStartIndex - 1
+    dataEndIndexWith = startIndexId - 1
   }
 
   // Section - via
 
-  const viaStartIndex = tempHeader.indexOf(`${viaTextPart} `, nextSearchStartIndex)
-  let viaDataStartIndex = 0
-  let viaDataEndIndex = 0
-  if (viaStartIndex !== -1) {
-    viaDataStartIndex = viaStartIndex + viaTextPart.length + 1
+  const startIndexVia = tempHeader.indexOf(`${textPartVia} `, startIndexNextSearch)
+  let dataStartIndexVia = 0
+  let dataEndIndexVia = 0
+  if (startIndexVia !== -1) {
+    dataStartIndexVia = startIndexVia + textPartVia.length + 1
 
-    nextSearchStartIndex = viaDataStartIndex
+    startIndexNextSearch = dataStartIndexVia
 
-    idDataEndIndex = viaStartIndex - 1
+    dataEndIndexId = startIndexVia - 1
 
-    viaDataEndIndex = tempHeader.length
+    dataEndIndexVia = tempHeader.length
   } else {
-    idDataEndIndex = tempHeader.length
+    dataEndIndexId = tempHeader.length
   }
 
   // Extract data
 
-  if (withDataStartIndex > 0) {
-    result.with = tempHeader.slice(withDataStartIndex, withDataEndIndex)
+  if (dataStartIndexWith > 0) {
+    result.with = tempHeader.slice(dataStartIndexWith, dataEndIndexWith)
   }
-  if (idDataStartIndex > 0) {
-    result.id = tempHeader.slice(idDataStartIndex, idDataEndIndex)
+  if (dataStartIndexId > 0) {
+    result.id = tempHeader.slice(dataStartIndexId, dataEndIndexId)
   }
-  if (viaDataStartIndex > 0) {
-    result.via = tempHeader.slice(viaDataStartIndex, viaDataEndIndex)
+  if (dataStartIndexVia > 0) {
+    result.via = tempHeader.slice(dataStartIndexVia, dataEndIndexVia)
   }
 
   return result
@@ -276,126 +308,233 @@ function decodeQuotedPrintable (encodedText: string, charset: string): string {
       />
     </div>
 
-    <div class="q-my-md">
-      <div class="row q-col-gutter-sm">
-        <div
-          v-if="returnPathHeaders && returnPathHeaders.length > 0"
-          class="col-2 relative-position"
+    <div class="row">
+      <div class="col-9">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          xml:space="preserve"
+          width="100%"
+          height="800"
+          version="1.1"
+          viewBox="0 0 32 32"
         >
-          <q-badge
-            floating
-            color="white"
-            text-color="black"
-          >
-            Return-Path
-          </q-badge>
-          <div class="q-pa-sm bg-blue text-white">
-            {{ returnPathHeaders[0].headerData }}
-          </div>
-        </div>
-        <div
-          v-if="fromHeaders && fromHeaders.length > 0"
-          class="col-2 relative-position"
-        >
-          <q-badge
-            floating
-            color="white"
-            text-color="black"
-          >
-            From
-          </q-badge>
-          <div class="q-pa-sm bg-blue text-white">
-            {{ fromHeaders[0].headerData }}
-          </div>
-        </div>
-        <div
-          v-if="toHeaders && toHeaders.length > 0"
-          class="col-2 relative-position"
-        >
-          <q-badge
-            floating
-            color="white"
-            text-color="black"
-          >
-            To
-          </q-badge>
-          <div class="q-pa-sm bg-blue text-white">
-            {{ toHeaders[0].headerData }}
-          </div>
-        </div>
-        <div
-          v-if="messageIdHeaders && messageIdHeaders.length > 0"
-          class="col-2 relative-position"
-        >
-          <q-badge
-            floating
-            color="white"
-            text-color="black"
-          >
-            Message-Id
-          </q-badge>
-          <div class="q-pa-sm bg-blue text-white">
-            {{ messageIdHeaders[0].headerData }}
-          </div>
-        </div>
-        <div
-          v-if="dateHeaders && dateHeaders.length > 0"
-          class="col-2 relative-position"
-        >
-          <q-badge
-            floating
-            color="white"
-            text-color="black"
-          >
-            Date
-          </q-badge>
-          <div class="q-pa-sm bg-blue text-white">
-            {{ dateHeaders[0].headerData }}
-          </div>
-        </div>
-        <div
-          v-if="subjectHeaders && subjectHeaders.length > 0"
-          class="col-2 relative-position"
-        >
-          <q-badge
-            floating
-            color="white"
-            text-color="black"
-          >
-            Subject
-          </q-badge>
-          <div class="q-pa-sm bg-blue text-white">
-            {{ subjectHeaders[0].headerData }}
-          </div>
-        </div>
-        <div
-          v-if="mailHeaderParts"
-          class="col-2 relative-position"
-        >
-          <q-badge
-            floating
-            color="white"
-            text-color="black"
-          >
-            Total Headers
-          </q-badge>
-          <div class="q-pa-sm bg-blue text-white">
-            {{ mailHeaderParts?.length }}
-          </div>
-        </div>
+          <g id="mail"><path
+            d="M5.48 15.94c.12-.3 0-14.43 0-14.43H20.5l6.15 6.15v8.13"
+            style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1;stroke-linejoin:round;stroke-linecap:butt;paint-order:markers stroke fill"
+          /><path
+            d="m11.6 20.16-9.17-6.61v16.87h27.1V13.66l-9.09 6.5"
+            style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+          /><path
+            d="m2.43 29.04 13.55-9.88 13.55 9.88"
+            style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1"
+          /><path
+            d="m2.43 13.55 3.25-2.35"
+            style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1"
+          /><path
+            d="m26.48 11.2 3.05 2.46"
+            style="fill:none;fill-rule:evenodd;stroke:#263238;stroke-width:.8;stroke-dasharray:none;stroke-opacity:1"
+          /></g>
 
-        <div
-          v-if="receivedHeaders"
-          class="q-mt-sm"
-        >
-          <div>
+          <g
+            id="letter"
+            transform="translate(0,-1.5)"
+          >
+            <text
+              x="7"
+              y="5.9"
+              style="font:normal 0.5px sans-serif; fill: #666;;"
+            >From</text>
+            <text
+              x="7"
+              y="6.8"
+              style="font:italic 0.8px sans-serif;"
+            >{{ from }}</text>
+
+            <text
+              x="7"
+              y="7.6"
+              style="font:normal 0.5px sans-serif; fill: #666;;"
+            >To</text>
+            <text
+              x="7"
+              y="8.5"
+              style="font:italic 0.8px sans-serif;"
+            >{{ to }}</text>
+
+            <text
+              x="7"
+              y="10.5"
+              style="font:normal 0.8px sans-serif; font-weight: bold;"
+            >{{ subject }}</text>
+          </g>
+
+          <g>
+            <text
+              x="11"
+              y="26"
+              style="font:normal 0.5px sans-serif; fill: #666;;"
+            >ReturnPath</text>
+            <text
+              x="11"
+              y="27"
+              style="font:italic 1.0px sans-serif;"
+            >{{ returnPath }}</text>
+          </g>
+        </svg>
+      </div>
+      <div class="col-3">
+        <div class="q-my-md">
+          <div class="q-gutter-sm">
             <div
-              v-for="(received, index) in receivedHeaders"
-              :key="index"
-              class="q-pa-sm col-2 bg-grey text-white q-mb-sm"
+              v-if="returnPathHeaders && returnPathHeaders.length > 0"
+              class="relative-position"
             >
-              <pre style="margin: 0px;">{{ received }}</pre>
+              <q-badge
+                floating
+                color="white"
+                text-color="black"
+              >
+                Return-Path
+              </q-badge>
+              <div class="q-pa-sm bg-blue text-white">
+                <div
+                  v-for="(returnPathHeader, index) in returnPathHeaders"
+                  :key="`returnPathHeader-${index}`"
+                >
+                  {{ returnPathHeader.headerData }}
+                </div>
+              </div>
             </div>
+            <div
+              v-if="fromHeaders && fromHeaders.length > 0"
+              class="relative-position"
+            >
+              <q-badge
+                floating
+                color="white"
+                text-color="black"
+              >
+                From
+              </q-badge>
+              <div class="q-pa-sm bg-blue text-white">
+                <div
+                  v-for="(fromHeader, index) in fromHeaders"
+                  :key="`fromHeader-${index}`"
+                >
+                  {{ fromHeader.headerData }}
+                </div>
+              </div>
+            </div>
+            <div
+              v-if="toHeaders && toHeaders.length > 0"
+              class="relative-position"
+            >
+              <q-badge
+                floating
+                color="white"
+                text-color="black"
+              >
+                To
+              </q-badge>
+              <div class="q-pa-sm bg-blue text-white">
+                <div
+                  v-for="(toHeader, index) in toHeaders"
+                  :key="`toHeader-${index}`"
+                >
+                  {{ toHeader.headerData }}
+                </div>
+              </div>
+            </div>
+            <div
+              v-if="messageIdHeaders && messageIdHeaders.length > 0"
+              class="relative-position"
+            >
+              <q-badge
+                floating
+                color="white"
+                text-color="black"
+              >
+                Message-Id
+              </q-badge>
+              <div class="q-pa-sm bg-blue text-white">
+                <div
+                  v-for="(messageIdHeader, index) in messageIdHeaders"
+                  :key="`messageIdHeader-${index}`"
+                >
+                  {{ messageIdHeader.headerData }}
+                </div>
+              </div>
+            </div>
+            <div
+              v-if="dateHeaders && dateHeaders.length > 0"
+              class="relative-position"
+            >
+              <q-badge
+                floating
+                color="white"
+                text-color="black"
+              >
+                Date
+              </q-badge>
+              <div class="q-pa-sm bg-blue text-white">
+                <div
+                  v-for="(dateHeader, index) in dateHeaders"
+                  :key="`dateHeader-${index}`"
+                >
+                  {{ dateHeader.headerData }}
+                </div>
+              </div>
+            </div>
+            <div
+              v-if="subjectHeaders && subjectHeaders.length > 0"
+              class="relative-position"
+            >
+              <q-badge
+                floating
+                color="white"
+                text-color="black"
+              >
+                Subject
+              </q-badge>
+              <div class="q-pa-sm bg-blue text-white">
+                <div
+                  v-for="(subjectHeader, index) in subjectHeaders"
+                  :key="`subjectHeader-${index}`"
+                >
+                  {{ subjectHeader.headerData }}
+                </div>
+              </div>
+            </div>
+            <div
+              v-if="mailHeaderParts"
+              class="relative-position"
+            >
+              <q-badge
+                floating
+                color="white"
+                text-color="black"
+              >
+                Total Headers
+              </q-badge>
+              <div class="q-pa-sm bg-blue text-white">
+                {{ mailHeaderParts?.length }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="receivedHeaders"
+        class="q-mt-sm"
+      >
+        <div>
+          <div
+            v-for="(received, index) in receivedHeaders"
+            :key="index"
+            class="q-pa-sm col-2 bg-grey text-white q-mb-sm"
+          >
+            <pre style="margin: 0px;">{{ received }}</pre>
           </div>
         </div>
       </div>
