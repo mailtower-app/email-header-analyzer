@@ -2,8 +2,11 @@
 import { ref, computed } from 'vue'
 import { QTableProps } from 'quasar'
 
-import { mailHelper } from 'src/helpers/mailHelper'
 import { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts'
+
+import { mailHelper } from 'src/helpers/mailHelper'
+
+import MailFlow from 'src/components/MailFlow.vue'
 
 const MailHeaders = {
   From: 'From',
@@ -119,15 +122,15 @@ const receivedHeaders = computed<ReceivedHeaderParts[] | undefined>(() => {
     return undefined
   }
 
-  const receivedHeaders = filteredHeaders.filter(o => o.headerData).map(headerDetail => mailHelper.parseReceivedHeader(headerDetail))
+  const items = filteredHeaders.filter(o => o.headerData).map(headerDetail => mailHelper.parseReceivedHeader(headerDetail))
 
-  receivedHeaders?.sort((a, b) => {
+  items?.sort((a, b) => {
     if (a.rawHeaderDetails.headerIndex && b.rawHeaderDetails.headerIndex) {
       return b.rawHeaderDetails.headerIndex - a.rawHeaderDetails.headerIndex
     }
     return -1
   })
-  return receivedHeaders
+  return items
 })
 
 const authenticationResultsHeaders = computed(() => {
@@ -144,19 +147,6 @@ const otherHeaders = computed(() => {
   }
   return filteredHeaders
 })
-
-function svgReceiveTranslate (index: number) : string {
-  const maxItemsPerRow = 6
-  const boxWidth = 115
-  const boxHeight = 45
-
-  const factor = Math.floor(index / maxItemsPerRow)
-
-  const y = factor * boxHeight
-  const x = (index % maxItemsPerRow) * boxWidth
-
-  return `translate(${x}, ${y})`
-}
 
 </script>
 
@@ -176,7 +166,7 @@ function svgReceiveTranslate (index: number) : string {
       v-if="mailHeader"
       class="row"
     >
-      <div class="col-12 col-md-8">
+      <div class="col-12 col-md-6">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           xml:space="preserve"
@@ -258,21 +248,17 @@ function svgReceiveTranslate (index: number) : string {
           </g>
         </svg>
       </div>
-      <div class="col-12 col-md-4">
+      <div class="col-12 col-md-6">
         <div class="q-my-md">
           <div class="q-gutter-sm">
             <div
               v-if="returnPathHeaders && returnPathHeaders.length > 0"
-              class="relative-position"
+              class="row"
             >
-              <q-badge
-                floating
-                color="white"
-                text-color="black"
-              >
+              <div class="col-2 bg-grey-4 q-pa-sm">
                 Return-Path
-              </q-badge>
-              <div class="q-pa-sm bg-grey text-white">
+              </div>
+              <div class="col-10 q-pa-sm bg-grey text-white">
                 <div
                   v-for="(returnPathHeader, index) in returnPathHeaders"
                   :key="`returnPathHeader-${index}`"
@@ -283,16 +269,12 @@ function svgReceiveTranslate (index: number) : string {
             </div>
             <div
               v-if="fromHeaders && fromHeaders.length > 0"
-              class="relative-position"
+              class="row"
             >
-              <q-badge
-                floating
-                color="white"
-                text-color="black"
-              >
+              <div class="col-2 bg-grey-4 q-pa-sm">
                 From
-              </q-badge>
-              <div class="q-pa-sm bg-grey text-white">
+              </div>
+              <div class="col-10 q-pa-sm bg-grey text-white">
                 <div
                   v-for="(fromHeader, index) in fromHeaders"
                   :key="`fromHeader-${index}`"
@@ -303,16 +285,12 @@ function svgReceiveTranslate (index: number) : string {
             </div>
             <div
               v-if="toHeaders && toHeaders.length > 0"
-              class="relative-position"
+              class="row"
             >
-              <q-badge
-                floating
-                color="white"
-                text-color="black"
-              >
+              <div class="col-2 bg-grey-4 q-pa-sm">
                 To
-              </q-badge>
-              <div class="q-pa-sm bg-grey text-white">
+              </div>
+              <div class="col-10 q-pa-sm bg-grey text-white">
                 <div
                   v-for="(toHeader, index) in toHeaders"
                   :key="`toHeader-${index}`"
@@ -323,16 +301,12 @@ function svgReceiveTranslate (index: number) : string {
             </div>
             <div
               v-if="messageIdHeaders && messageIdHeaders.length > 0"
-              class="relative-position"
+              class="row"
             >
-              <q-badge
-                floating
-                color="white"
-                text-color="black"
-              >
+              <div class="col-2 bg-grey-4 q-pa-sm">
                 Message-Id
-              </q-badge>
-              <div class="q-pa-sm bg-grey text-white">
+              </div>
+              <div class="col-10 q-pa-sm bg-grey text-white">
                 <div
                   v-for="(messageIdHeader, index) in messageIdHeaders"
                   :key="`messageIdHeader-${index}`"
@@ -343,16 +317,12 @@ function svgReceiveTranslate (index: number) : string {
             </div>
             <div
               v-if="dateHeaders && dateHeaders.length > 0"
-              class="relative-position"
+              class="row"
             >
-              <q-badge
-                floating
-                color="white"
-                text-color="black"
-              >
+              <div class="col-2 bg-grey-4 q-pa-sm">
                 Date
-              </q-badge>
-              <div class="q-pa-sm bg-grey text-white">
+              </div>
+              <div class="col-10 q-pa-sm bg-grey text-white">
                 <div
                   v-for="(dateHeader, index) in dateHeaders"
                   :key="`dateHeader-${index}`"
@@ -363,16 +333,12 @@ function svgReceiveTranslate (index: number) : string {
             </div>
             <div
               v-if="subjectHeaders && subjectHeaders.length > 0"
-              class="relative-position"
+              class="row"
             >
-              <q-badge
-                floating
-                color="white"
-                text-color="black"
-              >
+              <div class="col-2 bg-grey-4 q-pa-sm">
                 Subject
-              </q-badge>
-              <div class="q-pa-sm bg-grey text-white">
+              </div>
+              <div class="col-10 q-pa-sm bg-grey text-white">
                 <div
                   v-for="(subjectHeader, index) in subjectHeaders"
                   :key="`subjectHeader-${index}`"
@@ -383,101 +349,31 @@ function svgReceiveTranslate (index: number) : string {
             </div>
             <div
               v-if="authenticationResultsHeaders && authenticationResultsHeaders.length > 0"
-              class="relative-position"
+              class="row"
             >
-              <q-badge
-                floating
-                color="white"
-                text-color="black"
-              >
+              <div class="col-2 bg-grey-4 q-pa-sm">
                 Authentication-Results
-              </q-badge>
-              <div class="q-pa-sm bg-grey text-white">
+              </div>
+              <div class="col-10 q-pa-sm bg-grey text-white">
                 <div
                   v-for="(authenticationResultsHeader, index) in authenticationResultsHeaders"
                   :key="`subjectHeader-${index}`"
                 >
-                  {{ authenticationResultsHeader.headerData }}
+                  <pre style="margin: 0px;">{{ authenticationResultsHeader.headerData.split(';').map(o=>o.trim()).join('\n') }}</pre>
                 </div>
-              </div>
-            </div>
-
-            <div
-              v-if="mailHeaderParts"
-              class="relative-position"
-            >
-              <q-badge
-                floating
-                color="white"
-                text-color="black"
-              >
-                Total Headers
-              </q-badge>
-              <div class="q-pa-sm bg-grey text-white">
-                {{ mailHeaderParts?.length }}
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div>
+    <div v-if="mailHeader">
       <h2>Mail Hops</h2>
       <div
         v-if="receivedHeaders"
         class="q-mt-sm"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          xml:space="preserve"
-          width="100%"
-          height="270"
-          version="1.1"
-          viewBox="0 0 700 100"
-        >
-          <g
-            v-for="(received, index) in receivedHeaders"
-            :key="index"
-            :transform="svgReceiveTranslate(index)"
-          >
-            <path
-              d="M 0 0 H 10 V 10 H 0 Z"
-              style="fill:gray;"
-            />
-            <text
-              x="5"
-              y="5.5"
-              dominant-baseline="middle"
-              text-anchor="middle"
-              style="font:normal 4px sans-serif; fill: #fff;"
-            >{{ index + 1 }}</text>
-            <path
-              d="M 0 0 H 110 V 40 H 0 Z"
-              style="fill:none;stroke:#263238;stroke-width:.6;"
-            />
-            <path
-              v-if="index < receivedHeaders.length - 1"
-              d="M 111,15 L 114,20 L 111,25 Z"
-              style="fill:#aaa;stroke:#888;stroke-width:.3;"
-            />
-            <text
-              x="4"
-              y="20"
-              style="font:bold 4px sans-serif; fill: #666;"
-            >{{ received.byDomain }}</text>
-            <text
-              x="4"
-              y="26"
-              style="font:normal 4px sans-serif; fill: #666;"
-            >{{ received.byIpAddress }}</text>
-
-            <text
-              x="4"
-              y="32"
-              style="font:normal 4px sans-serif; fill: #666;"
-            >{{ received.with?.slice(0,50) }}</text>
-          </g>
-        </svg>
+        <MailFlow :received-headers="receivedHeaders" />
 
         <!-- <div>
           <div
@@ -499,6 +395,8 @@ function svgReceiveTranslate (index: number) : string {
         :rows-per-page-options="[0]"
         :rows="otherHeaders"
         :columns="columns"
+        class="full-width"
+        table-style="min-height: 400px;"
       >
         <template #top>
           <q-input

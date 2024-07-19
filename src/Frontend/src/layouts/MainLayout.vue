@@ -9,8 +9,6 @@
         <q-toolbar-title>
           Mailtower E-Mail Header Analyzer
         </q-toolbar-title>
-
-        <authenticationResultsHeaders>Quasar v{{ $q.version }}</authenticationResultsHeaders>
       </q-toolbar>
     </q-header>
 
