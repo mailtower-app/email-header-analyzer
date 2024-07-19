@@ -159,6 +159,7 @@ const otherHeaders = computed(() => {
         placeholder="Paste email headers here"
         outlined
         type="textarea"
+        :rows="mailHeader ? 8 : 30"
       />
     </div>
 
