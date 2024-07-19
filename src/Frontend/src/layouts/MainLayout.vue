@@ -4,11 +4,19 @@
 
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+    <q-header>
       <q-toolbar>
         <q-toolbar-title>
-          Mailtower E-Mail Header Analyzer
+          Mailtower - E-Mail Header Analyzer
         </q-toolbar-title>
+
+        <q-btn
+          stretch
+          flat
+          href="https://mailtower.app"
+        >
+          Mailtower.app
+        </q-btn>
 
         <q-btn
           stretch
