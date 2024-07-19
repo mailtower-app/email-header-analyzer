@@ -38,4 +38,4 @@ jobs:
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        folder: src/Fronend/dist/spa/ # The folder the action should deploy.
+        folder: src/Frontend/dist/spa/ # The folder the action should deploy.
