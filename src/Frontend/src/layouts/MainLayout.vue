@@ -9,6 +9,14 @@
         <q-toolbar-title>
           Mailtower E-Mail Header Analyzer
         </q-toolbar-title>
+
+        <q-btn
+          stretch
+          flat
+          href="https://github.com/mailtower-app/email-header-analyzer"
+        >
+          GitHub
+        </q-btn>
       </q-toolbar>
     </q-header>
 
