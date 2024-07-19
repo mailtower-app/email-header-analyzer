@@ -7,6 +7,7 @@ import { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts'
 import { mailHelper } from 'src/helpers/mailHelper'
 
 import MailFlow from 'src/components/MailFlow.vue'
+import MailFlowTable from 'src/components/MailFlowTable.vue'
 
 const MailHeaders = {
   From: 'From',
@@ -53,7 +54,12 @@ const mailHeaderParts = computed(() => {
     return undefined
   }
 
-  return mailHelper.splitMailHeader(mailHeader.value)
+  try {
+    return mailHelper.splitMailHeader(mailHeader.value)
+  } catch (error) {
+    console.error(error)
+    return undefined
+  }
 })
 
 const returnPathHeaders = computed(() => {
@@ -375,6 +381,7 @@ const otherHeaders = computed(() => {
         class="q-mt-sm"
       >
         <MailFlow :received-headers="receivedHeaders" />
+        <MailFlowTable :received-headers="receivedHeaders" />
 
         <!-- <div>
           <div

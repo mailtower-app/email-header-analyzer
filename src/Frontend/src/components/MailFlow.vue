@@ -1,22 +1,32 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useQuasar } from 'quasar'
 
 import { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts'
-import { computed } from 'vue'
 
 interface Props {
   receivedHeaders: ReceivedHeaderParts[]
 }
 
-const maxItemsPerRow = 6
+const $q = useQuasar()
+
+const props = defineProps<Props>()
+
 const boxWidth = 110
 const boxHeight = 40
 const paddingRight = 5
 const paddingBottom = 5
 
-const props = defineProps<Props>()
+const maxItemsPerRow = computed(() => {
+  return $q.screen.gt.sm ? 6 : 2
+})
 
 const requiredRows = computed(() => {
-  return Math.ceil(props.receivedHeaders.length / maxItemsPerRow)
+  return Math.ceil(props.receivedHeaders.length / maxItemsPerRow.value)
+})
+
+const svgWidth = computed(() => {
+  return maxItemsPerRow.value * (boxWidth + paddingRight)
 })
 
 const svgHeight = computed(() => {
@@ -24,10 +34,10 @@ const svgHeight = computed(() => {
 })
 
 function svgReceiveTranslate (index: number) : string {
-  const factor = Math.floor(index / maxItemsPerRow)
+  const factor = Math.floor(index / maxItemsPerRow.value)
 
   const y = factor * (boxHeight + paddingBottom)
-  const x = (index % maxItemsPerRow) * (boxWidth + paddingRight)
+  const x = (index % maxItemsPerRow.value) * (boxWidth + paddingRight)
 
   return `translate(${x}, ${y})`
 }
@@ -42,7 +52,7 @@ function svgReceiveTranslate (index: number) : string {
     :height="svgHeight"
     version="1.1"
     style="width:100%;height:100%;"
-    :viewBox="`0 0 700 ${svgHeight}`"
+    :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
   >
     <g
       v-for="(received, index) in receivedHeaders"
