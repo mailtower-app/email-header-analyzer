@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { QTableProps } from 'quasar'
 
 import { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts'
@@ -7,7 +8,30 @@ interface Props {
   receivedHeaders: ReceivedHeaderParts[]
 }
 
-defineProps<Props>()
+const myProps = defineProps<Props>()
+
+const delays = computed(() => {
+  const differences: (number | undefined)[] = []
+
+  differences.push(undefined)
+
+  for (let i = 1; i < myProps.receivedHeaders.length; i++) {
+    const previousDate = myProps.receivedHeaders[i - 1].dateTime
+    const currentDate = myProps.receivedHeaders[i].dateTime
+
+    if (!previousDate || !currentDate) {
+      differences.push(0)
+      continue
+    }
+
+    const diffInMs = currentDate.getTime() - previousDate.getTime()
+    const diffInMinutes = diffInMs / 1000
+
+    differences.push(diffInMinutes)
+  }
+
+  return differences
+})
 
 const columns : QTableProps['columns'] = [
   {
@@ -15,6 +39,27 @@ const columns : QTableProps['columns'] = [
     align: 'left',
     label: 'Time',
     field: 'dateTime',
+    sortable: false
+  },
+  {
+    name: 'delay',
+    align: 'left',
+    label: 'Delay',
+    field: 'delay',
+    sortable: false
+  },
+  {
+    name: 'byDomain',
+    align: 'left',
+    label: 'By Domain',
+    field: 'byDomain',
+    sortable: false
+  },
+  {
+    name: 'byIpAddress',
+    align: 'left',
+    label: 'By IpAddress',
+    field: 'byIpAddress',
     sortable: false
   },
   {
@@ -32,17 +77,10 @@ const columns : QTableProps['columns'] = [
     sortable: false
   },
   {
-    name: 'byDomain',
+    name: 'via',
     align: 'left',
-    label: 'By Domain',
-    field: 'byDomain',
-    sortable: false
-  },
-  {
-    name: 'byIpAddress',
-    align: 'left',
-    label: 'By IpAddress',
-    field: 'byIpAddress',
+    label: 'Via',
+    field: 'via',
     sortable: false
   },
   {
@@ -82,6 +120,13 @@ const columns : QTableProps['columns'] = [
     <template #body-cell-dateTime="props">
       <q-td>
         {{ props.row.dateTime.toISOString() }}
+      </q-td>
+    </template>
+    <template #body-cell-delay="props">
+      <q-td>
+        <template v-if="delays[props.rowIndex] !== undefined">
+          {{ delays[props.rowIndex].toFixed(1) }}s
+        </template>
       </q-td>
     </template>
   </q-table>

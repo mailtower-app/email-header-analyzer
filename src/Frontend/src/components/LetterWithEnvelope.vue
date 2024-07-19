@@ -46,6 +46,19 @@ defineProps<Props>()
       style="fill:none;stroke:#263238;stroke-width:.8;stroke-linejoin:round;"
     /></g>
 
+    <!-- <g>
+      <circle
+        cx="23.5"
+        cy="9"
+        r="2"
+        fill="gold"
+      /><text
+        x="22.5"
+        y="9.2"
+        style="font:normal 0.5px sans-serif; fill: #666;;"
+      >Signature</text>
+    </g> -->
+
     <g
       id="letter"
       transform="translate(0,-2)"
@@ -81,13 +94,17 @@ defineProps<Props>()
 
     <g>
       <text
-        x="11"
+        x="16"
         y="26"
+        dominant-baseline="middle"
+        text-anchor="middle"
         style="font:normal 0.5px sans-serif; fill: #666;;"
       >ReturnPath</text>
       <text
-        x="11"
+        x="16"
         y="27"
+        dominant-baseline="middle"
+        text-anchor="middle"
         style="font:italic 1.0px sans-serif;"
       >{{ returnPath }}</text>
     </g>
