@@ -73,12 +73,10 @@ const columns : QTableProps['columns'] = [
 <template>
   <q-table
     flat
-
     bordered
     :rows="receivedHeaders"
     :columns="columns"
     :rows-per-page-options="[0]"
-
     no-paginate
   >
     <template #body-cell-dateTime="props">
