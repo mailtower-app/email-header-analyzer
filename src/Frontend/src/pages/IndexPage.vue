@@ -2,24 +2,8 @@
 import { ref, computed } from 'vue'
 import { QTableProps } from 'quasar'
 
-interface HeaderDetails {
-  headerName: string
-  headerData: string
-  headerIndex: number
-}
-
-type ReceivedHeaderParts = {
-  rawHeaderDetails: HeaderDetails
-  fromDomain?: string
-  fromIpAddress?: string
-  byDomain?: string
-  byIpAddress?: string
-  via?: string
-  with?: string
-  id?: string
-  for?: string
-  dateTime?: Date
-}
+import { mailHelper } from 'src/helpers/mailHelper'
+import { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts'
 
 const MailHeaders = {
   From: 'From',
@@ -62,40 +46,11 @@ const columns : QTableProps['columns'] = [
 ]
 
 const mailHeaderParts = computed(() => {
-  const lines = mailHeader.value?.split(/\r?\n/)
-  if (!lines) {
+  if (!mailHeader.value) {
     return undefined
   }
 
-  const formattedHeader = []
-  let currentLine = ''
-  let headerIndex = 0
-
-  for (const line of lines) {
-    if (!line) {
-      break
-    }
-
-    if (/^\s/.test(line)) {
-      // Line is a continuation of the previous header field
-      currentLine += ' ' + line.trim()
-    } else {
-      // Line is a new header field
-      if (currentLine) {
-        formattedHeader.push(decodeHeaderField(currentLine, headerIndex))
-        headerIndex++
-      }
-      currentLine = line
-    }
-  }
-
-  // Push the last accumulated line
-  if (currentLine) {
-    formattedHeader.push(decodeHeaderField(currentLine, headerIndex))
-  }
-
-  // Join the formatted header lines with new lines
-  return formattedHeader
+  return mailHelper.splitMailHeader(mailHeader.value)
 })
 
 const returnPathHeaders = computed(() => {
@@ -154,7 +109,7 @@ const subject = computed(() => {
   return subjectHeaders.value[0].headerData
 })
 
-const receivedHeaders = computed(() => {
+const receivedHeaders = computed<ReceivedHeaderParts[] | undefined>(() => {
   if (!mailHeaderParts.value) {
     return undefined
   }
@@ -164,7 +119,7 @@ const receivedHeaders = computed(() => {
     return undefined
   }
 
-  const receivedHeaders = filteredHeaders.filter(o => o.headerData).map(headerDetail => parseReceivedHeader(headerDetail))
+  const receivedHeaders = filteredHeaders.filter(o => o.headerData).map(headerDetail => mailHelper.parseReceivedHeader(headerDetail))
 
   receivedHeaders?.sort((a, b) => {
     if (a.rawHeaderDetails.headerIndex && b.rawHeaderDetails.headerIndex) {
@@ -175,171 +130,20 @@ const receivedHeaders = computed(() => {
   return receivedHeaders
 })
 
+const authenticationResultsHeaders = computed(() => {
+  return mailHeaderParts.value?.filter(header => header.headerName === 'Authentication-Results')
+})
+
 const otherHeaders = computed(() => {
   const ignoreHeaderNames = Object.values(MailHeaders)
   const filteredHeaders = mailHeaderParts.value?.filter(header => !ignoreHeaderNames.includes(header.headerName))
-  if (filter.value) {
-    return filteredHeaders?.filter(header => header.headerName.toLowerCase().includes(filter.value?.toLowerCase()))
+
+  const filterTerm = filter.value?.toLowerCase()
+  if (filterTerm) {
+    return filteredHeaders?.filter(header => header.headerName.toLowerCase().includes(filterTerm))
   }
   return filteredHeaders
 })
-
-function splitMailHeaderDomainIpAddress (receiveHeader : string) : string[] {
-  const indexOfOpeningRoundClamp = receiveHeader.indexOf('(')
-  if (indexOfOpeningRoundClamp === -1) {
-    return [receiveHeader]
-  }
-
-  const hostname = receiveHeader.slice(0, indexOfOpeningRoundClamp).trim()
-  const ipAddress = receiveHeader.slice(indexOfOpeningRoundClamp + 1, receiveHeader.indexOf(')')).trim()
-
-  return [hostname, ipAddress]
-}
-
-function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts {
-  const textPartFrom = 'from'
-  const textPartBy = 'by'
-  const textPartWith = 'with'
-  const textPartId = 'id'
-  const textPartVia = 'via'
-
-  const result : ReceivedHeaderParts = {
-    rawHeaderDetails: headerDetails
-  }
-
-  if (!headerDetails.headerData) {
-    return result
-  }
-
-  let tempHeader = headerDetails.headerData
-
-  // Extract Date at the end
-
-  const indexOfSemilicon = headerDetails.headerData.lastIndexOf(';')
-  if (indexOfSemilicon !== -1) {
-    const tempDate = headerDetails.headerData.slice(indexOfSemilicon + 1).trim()
-    result.dateTime = new Date(tempDate)
-    tempHeader = headerDetails.headerData.slice(0, indexOfSemilicon)
-  }
-
-  // Section - from
-
-  const startIndexFrom = tempHeader.indexOf(`${textPartFrom} `)
-  if (startIndexFrom === -1) {
-    return result
-  }
-
-  const dataStartIndexFrom = startIndexFrom + textPartFrom.length + 1
-
-  // Section - by
-
-  const startIndexBy = tempHeader.indexOf(`${textPartBy} `, dataStartIndexFrom)
-  if (startIndexBy === -1) {
-    return result
-  }
-
-  const tempFrom = tempHeader.slice(dataStartIndexFrom, startIndexBy - 1)
-  const fromParts = splitMailHeaderDomainIpAddress(tempFrom)
-
-  result.fromDomain = fromParts[0]
-  result.fromIpAddress = fromParts[1]
-
-  const dataStartIndexBy = startIndexBy + textPartBy.length + 1
-
-  // Section - with
-
-  const startIndexWith = tempHeader.indexOf(`${textPartWith} `, dataStartIndexBy)
-  if (startIndexWith === -1) {
-    return result
-  }
-
-  const tempBy = tempHeader.slice(dataStartIndexBy, startIndexWith - 1)
-  const byParts = splitMailHeaderDomainIpAddress(tempBy)
-
-  result.byDomain = byParts[0]
-  result.byIpAddress = byParts[1]
-
-  const dataStartIndexWith = startIndexWith + textPartWith.length + 1
-  let dataEndIndexWith = tempHeader.length
-
-  // Prepare for optional
-
-  let startIndexNextSearch = dataStartIndexWith
-
-  // Section - id
-
-  const startIndexId = tempHeader.indexOf(`${textPartId} `, startIndexNextSearch)
-  let dataStartIndexId = 0
-  let dataEndIndexId = 0
-  if (startIndexId !== -1) {
-    dataStartIndexId = startIndexId + textPartId.length + 1
-    startIndexNextSearch = dataStartIndexId
-
-    dataEndIndexWith = startIndexId - 1
-  }
-
-  // Section - via
-
-  const startIndexVia = tempHeader.indexOf(`${textPartVia} `, startIndexNextSearch)
-  let dataStartIndexVia = 0
-  let dataEndIndexVia = 0
-  if (startIndexVia !== -1) {
-    dataStartIndexVia = startIndexVia + textPartVia.length + 1
-
-    startIndexNextSearch = dataStartIndexVia
-
-    dataEndIndexId = startIndexVia - 1
-
-    dataEndIndexVia = tempHeader.length
-  } else {
-    dataEndIndexId = tempHeader.length
-  }
-
-  // Extract data
-
-  if (dataStartIndexWith > 0) {
-    result.with = tempHeader.slice(dataStartIndexWith, dataEndIndexWith)
-  }
-  if (dataStartIndexId > 0) {
-    result.id = tempHeader.slice(dataStartIndexId, dataEndIndexId)
-  }
-  if (dataStartIndexVia > 0) {
-    result.via = tempHeader.slice(dataStartIndexVia, dataEndIndexVia)
-  }
-
-  return result
-}
-
-function decodeHeaderField (field: string, headerIndex: number): HeaderDetails {
-  const rawHeaderField = field.replace(/=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi, (_, charset, encoding, encodedText) => {
-    if (encoding.toUpperCase() === 'B') {
-      return decodeBase64(encodedText, charset)
-    } else if (encoding.toUpperCase() === 'Q') {
-      return decodeQuotedPrintable(encodedText, charset)
-    }
-    return field
-  })
-
-  const indexOfFirstColon = rawHeaderField.indexOf(':')
-
-  return {
-    headerName: rawHeaderField.slice(0, indexOfFirstColon),
-    headerData: rawHeaderField.slice(indexOfFirstColon + 2),
-    headerIndex
-  }
-}
-
-function decodeBase64 (encodedText: string, charset: string): string {
-  const decodedText = atob(encodedText)
-  return new TextDecoder(charset).decode(new Uint8Array([...decodedText].map(char => char.charCodeAt(0))))
-}
-
-function decodeQuotedPrintable (encodedText: string, charset: string): string {
-  const decodedText = encodedText.replace(/_/g, ' ').replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => {
-    return String.fromCharCode(parseInt(hex, 16))
-  })
-  return new TextDecoder(charset).decode(new Uint8Array([...decodedText].map(char => char.charCodeAt(0))))
-}
 
 function svgReceiveTranslate (index: number) : string {
   const maxItemsPerRow = 6
@@ -347,10 +151,9 @@ function svgReceiveTranslate (index: number) : string {
   const boxHeight = 45
 
   const factor = Math.floor(index / maxItemsPerRow)
-  const y = factor * boxHeight
 
-  const xReset = factor * maxItemsPerRow * boxWidth
-  const x = (index * boxWidth) - xReset
+  const y = factor * boxHeight
+  const x = (index % maxItemsPerRow) * boxWidth
 
   return `translate(${x}, ${y})`
 }
@@ -363,12 +166,16 @@ function svgReceiveTranslate (index: number) : string {
       <q-input
         v-model="mailHeader"
         spellcheck="false"
+        placeholder="Paste email headers here"
         outlined
         type="textarea"
       />
     </div>
 
-    <div class="row">
+    <div
+      v-if="mailHeader"
+      class="row"
+    >
       <div class="col-12 col-md-8">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -433,7 +240,7 @@ function svgReceiveTranslate (index: number) : string {
             <text
               x="7"
               y="12"
-              style="font:normal 0.8px sans-serif; font-weight: bold;"
+              style="font:normal 0.7px sans-serif; font-weight: bold;"
             >{{ subject }}</text>
           </g>
 
@@ -575,6 +382,27 @@ function svgReceiveTranslate (index: number) : string {
               </div>
             </div>
             <div
+              v-if="authenticationResultsHeaders && authenticationResultsHeaders.length > 0"
+              class="relative-position"
+            >
+              <q-badge
+                floating
+                color="white"
+                text-color="black"
+              >
+                Authentication-Results
+              </q-badge>
+              <div class="q-pa-sm bg-grey text-white">
+                <div
+                  v-for="(authenticationResultsHeader, index) in authenticationResultsHeaders"
+                  :key="`subjectHeader-${index}`"
+                >
+                  {{ authenticationResultsHeader.headerData }}
+                </div>
+              </div>
+            </div>
+
+            <div
               v-if="mailHeaderParts"
               class="relative-position"
             >
@@ -592,7 +420,9 @@ function svgReceiveTranslate (index: number) : string {
           </div>
         </div>
       </div>
-
+    </div>
+    <div>
+      <h2>Mail Hops</h2>
       <div
         v-if="receivedHeaders"
         class="q-mt-sm"
@@ -601,7 +431,7 @@ function svgReceiveTranslate (index: number) : string {
           xmlns="http://www.w3.org/2000/svg"
           xml:space="preserve"
           width="100%"
-          height="300"
+          height="270"
           version="1.1"
           viewBox="0 0 700 100"
         >
@@ -615,18 +445,25 @@ function svgReceiveTranslate (index: number) : string {
               style="fill:gray;"
             />
             <text
-              x="4"
-              y="6"
+              x="5"
+              y="5.5"
+              dominant-baseline="middle"
+              text-anchor="middle"
               style="font:normal 4px sans-serif; fill: #fff;"
             >{{ index + 1 }}</text>
             <path
               d="M 0 0 H 110 V 40 H 0 Z"
-              style="fill:none;stroke:#263238;stroke-width:.8;"
+              style="fill:none;stroke:#263238;stroke-width:.6;"
+            />
+            <path
+              v-if="index < receivedHeaders.length - 1"
+              d="M 111,15 L 114,20 L 111,25 Z"
+              style="fill:#aaa;stroke:#888;stroke-width:.3;"
             />
             <text
               x="4"
               y="20"
-              style="font:normal 4px sans-serif; fill: #666;"
+              style="font:bold 4px sans-serif; fill: #666;"
             >{{ received.byDomain }}</text>
             <text
               x="4"
@@ -653,6 +490,7 @@ function svgReceiveTranslate (index: number) : string {
         </div> -->
       </div>
 
+      <h2>Other Headers</h2>
       <q-table
         v-if="otherHeaders"
         flat

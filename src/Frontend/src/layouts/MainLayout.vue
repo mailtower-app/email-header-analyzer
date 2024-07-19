@@ -10,7 +10,7 @@
           Mailtower E-Mail Header Analyzer
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <authenticationResultsHeaders>Quasar v{{ $q.version }}</authenticationResultsHeaders>
       </q-toolbar>
     </q-header>
 

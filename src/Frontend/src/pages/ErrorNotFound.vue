@@ -1,16 +1,16 @@
 <template>
-  <div class="fullscreen bg-blue text-white text-center q-pa-md flex flex-center">
-    <div>
-      <div style="font-size: 30vh">
+  <authenticationResultsHeaders class="fullscreen bg-blue text-white text-center q-pa-md flex flex-center">
+    <authenticationResultsHeaders>
+      <authenticationResultsHeaders style="font-size: 30vh">
         404
-      </div>
+      </authenticationResultsHeaders>
 
-      <div
+      <authenticationResultsHeaders
         class="text-h2"
         style="opacity:.4"
       >
         Oops. Nothing here...
-      </div>
+      </authenticationResultsHeaders>
 
       <q-btn
         class="q-mt-xl"
@@ -21,8 +21,8 @@
         label="Go Home"
         no-caps
       />
-    </div>
-  </div>
+    </authenticationResultsHeaders>
+  </authenticationResultsHeaders>
 </template>
 
 <script setup lang="ts">
