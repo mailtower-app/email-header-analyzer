@@ -72,7 +72,7 @@ const returnPathHeaders = computed(() => {
 })
 
 const returnPath = computed(() => {
-  if (!returnPathHeaders.value) {
+  if (!returnPathHeaders.value || returnPathHeaders.value.length === 0) {
     return undefined
   }
 
@@ -84,7 +84,7 @@ const fromHeaders = computed(() => {
 })
 
 const from = computed(() => {
-  if (!fromHeaders.value) {
+  if (!fromHeaders.value || fromHeaders.value.length === 0) {
     return undefined
   }
 
@@ -96,7 +96,7 @@ const toHeaders = computed(() => {
 })
 
 const to = computed(() => {
-  if (!toHeaders.value) {
+  if (!toHeaders.value || toHeaders.value.length === 0) {
     return undefined
   }
 
@@ -116,7 +116,7 @@ const subjectHeaders = computed(() => {
 })
 
 const subject = computed(() => {
-  if (!subjectHeaders.value) {
+  if (!subjectHeaders.value || subjectHeaders.value.length === 0) {
     return undefined
   }
 
