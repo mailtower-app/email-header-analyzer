@@ -116,6 +116,7 @@ const columns : QTableProps['columns'] = [
     :columns="columns"
     :rows-per-page-options="[0]"
     no-paginate
+    hide-bottom
   >
     <template #body-cell-dateTime="props">
       <q-td>
