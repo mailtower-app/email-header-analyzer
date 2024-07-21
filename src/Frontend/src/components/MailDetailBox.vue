@@ -24,10 +24,10 @@ withDefaults(defineProps<Props>(), {
         :key="`detail-${index}`"
       >
         <template v-if="preformatted">
-          <pre style="margin: 0px;">{{ detail }}</pre>
+          <pre style="margin: 0px; word-wrap: break-word; white-space: break-spaces;">{{ detail }}</pre>
         </template>
         <template v-else>
-          <div style="font-family: monospace;">
+          <div style="font-family: monospace; word-wrap: break-word; white-space: break-spaces;">
             {{ detail }}
           </div>
         </template>
