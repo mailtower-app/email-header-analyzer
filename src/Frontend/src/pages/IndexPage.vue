@@ -186,7 +186,7 @@ const otherHeaders = computed(() => {
       v-if="mailHeader"
       class="row"
     >
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-md-5">
         <LetterWithEnvelope
           :to="to"
           :from="from"
@@ -194,54 +194,61 @@ const otherHeaders = computed(() => {
           :return-path="returnPath"
         />
       </div>
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-md-7">
         <div class="q-my-md">
           <div class="q-gutter-sm">
             <MailDetailBox
               v-if="returnPathHeaders && returnPathHeaders.length > 0"
               name="Return-Path"
               :details="returnPathHeaders?.map(o => o.headerData)"
+              :preformatted="false"
             />
             <MailDetailBox
               v-if="fromHeaders && fromHeaders.length > 0"
               name="From"
               :details="fromHeaders?.map(o => o.headerData)"
+              :preformatted="false"
             />
 
             <MailDetailBox
               v-if="toHeaders && toHeaders.length > 0"
               name="To"
               :details="toHeaders?.map(o => o.headerData)"
+              :preformatted="false"
             />
 
             <MailDetailBox
               v-if="replyToHeaders && replyToHeaders.length > 0"
               name="Reply-To"
               :details="replyToHeaders?.map(o => o.headerData)"
+              :preformatted="false"
             />
 
             <MailDetailBox
               v-if="messageIdHeaders && messageIdHeaders.length > 0"
               name="Message-Id"
               :details="messageIdHeaders?.map(o => o.headerData)"
+              :preformatted="false"
             />
 
             <MailDetailBox
               v-if="dateHeaders && dateHeaders.length > 0"
               name="Date"
               :details="dateHeaders?.map(o => o.headerData)"
+              :preformatted="false"
             />
 
             <MailDetailBox
               v-if="subjectHeaders && subjectHeaders.length > 0"
               name="Subject"
               :details="subjectHeaders?.map(o => o.headerData)"
+              :preformatted="false"
             />
 
             <MailDetailBox
               v-if="authenticationResultsHeaders && authenticationResultsHeaders.length > 0"
               name="Authentication-Results"
-              :details="authenticationResultsHeaders?.map(o => o.headerData.split(';').map(o=>o.trim()).join('\n'))"
+              :details="authenticationResultsHeaders?.map(o => o.headerData.split(';').map(o => o.trim()).join('\n'))"
               :preformatted="true"
             />
 
@@ -249,6 +256,7 @@ const otherHeaders = computed(() => {
               v-if="dkimSignatureHeaders && dkimSignatureHeaders.length > 0"
               name="Dkim Signature"
               :details="dkimSignatureHeaders?.map(o => o.headerData)"
+              :preformatted="false"
             />
           </div>
         </div>
