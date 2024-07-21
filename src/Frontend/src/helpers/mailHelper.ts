@@ -13,37 +13,6 @@ function splitMailHeaderDomainIpAddress (receiveHeader : string) : string[] {
   return [hostname, ipAddress]
 }
 
-function decodeHeaderField (field: string, headerIndex: number): HeaderDetails {
-  const rawHeaderField = field.replace(/=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi, (_, charset, encoding, encodedText) => {
-    if (encoding.toUpperCase() === 'B') {
-      return decodeBase64(encodedText, charset)
-    } else if (encoding.toUpperCase() === 'Q') {
-      return decodeQuotedPrintable(encodedText, charset)
-    }
-    return field
-  })
-
-  const indexOfFirstColon = rawHeaderField.indexOf(':')
-
-  return {
-    headerName: rawHeaderField.slice(0, indexOfFirstColon),
-    headerData: rawHeaderField.slice(indexOfFirstColon + 2),
-    headerIndex
-  }
-}
-
-function decodeBase64 (encodedText: string, charset: string): string {
-  const decodedText = atob(encodedText)
-  return new TextDecoder(charset).decode(new Uint8Array([...decodedText].map(char => char.charCodeAt(0))))
-}
-
-function decodeQuotedPrintable (encodedText: string, charset: string): string {
-  const decodedText = encodedText.replace(/_/g, ' ').replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => {
-    return String.fromCharCode(parseInt(hex, 16))
-  })
-  return new TextDecoder(charset).decode(new Uint8Array([...decodedText].map(char => char.charCodeAt(0))))
-}
-
 function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts {
   const textPartFrom = 'from'
   const textPartBy = 'by'
@@ -73,11 +42,11 @@ function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts
   // Section - from
 
   const startIndexFrom = tempHeader.indexOf(`${textPartFrom} `)
-  if (startIndexFrom === -1) {
-    return result
-  }
 
-  const dataStartIndexFrom = startIndexFrom + textPartFrom.length + 1
+  let dataStartIndexFrom = 0
+  if (startIndexFrom >= 0) {
+    dataStartIndexFrom = startIndexFrom + textPartFrom.length + 1
+  }
 
   // Section - by
 
@@ -86,11 +55,13 @@ function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts
     return result
   }
 
-  const tempFrom = tempHeader.slice(dataStartIndexFrom, startIndexBy - 1)
-  const fromParts = splitMailHeaderDomainIpAddress(tempFrom)
+  if (startIndexFrom !== -1) {
+    const tempFrom = tempHeader.slice(dataStartIndexFrom, startIndexBy - 1)
+    const fromParts = splitMailHeaderDomainIpAddress(tempFrom)
 
-  result.fromDomain = fromParts[0]
-  result.fromIpAddress = fromParts[1]
+    result.fromDomain = fromParts[0]
+    result.fromIpAddress = fromParts[1]
+  }
 
   const dataStartIndexBy = startIndexBy + textPartBy.length + 1
 
@@ -158,6 +129,38 @@ function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts
   return result
 }
 
+function decodeBase64 (encodedText: string, charset: string): string {
+  const decodedText = atob(encodedText)
+  return new TextDecoder(charset).decode(new Uint8Array([...decodedText].map(char => char.charCodeAt(0))))
+}
+
+function decodeQuotedPrintable (encodedText: string, charset: string): string {
+  const decodedText = encodedText.replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => {
+    return String.fromCharCode(parseInt(hex, 16))
+  })
+
+  return new TextDecoder(charset).decode(new Uint8Array([...decodedText].map(char => char.charCodeAt(0))))
+}
+
+function decodeMailHeader (mailHeader: string, headerIndex: number): HeaderDetails {
+  const encodedMailHeader = mailHeader.replace(/\s=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi, (_, charset, encoding, encodedText) => {
+    if (encoding.toUpperCase() === 'B') {
+      return decodeBase64(encodedText, charset)
+    } else if (encoding.toUpperCase() === 'Q') {
+      return decodeQuotedPrintable(encodedText, charset).trim()
+    }
+    return mailHeader
+  })
+
+  const indexOfFirstColon = encodedMailHeader.indexOf(':')
+
+  return {
+    headerName: encodedMailHeader.slice(0, indexOfFirstColon),
+    headerData: encodedMailHeader.slice(indexOfFirstColon + 2),
+    headerIndex
+  }
+}
+
 function splitMailHeader (mailRaw : string) : HeaderDetails[] | undefined {
   const lines = mailRaw.split(/\r?\n/)
   if (!lines) {
@@ -175,20 +178,21 @@ function splitMailHeader (mailRaw : string) : HeaderDetails[] | undefined {
 
     if (/^\s/.test(line)) {
       // Line is a continuation of the previous header field
-      currentLine += ' ' + line.trim()
+      currentLine += line
     } else {
       // Line is a new header field
       if (currentLine) {
-        formattedHeader.push(decodeHeaderField(currentLine, headerIndex))
+        formattedHeader.push(decodeMailHeader(currentLine, headerIndex))
         headerIndex++
       }
+
       currentLine = line
     }
   }
 
   // Push the last accumulated line
   if (currentLine) {
-    formattedHeader.push(decodeHeaderField(currentLine, headerIndex))
+    formattedHeader.push(decodeMailHeader(currentLine, headerIndex))
   }
 
   // Join the formatted header lines with new lines
