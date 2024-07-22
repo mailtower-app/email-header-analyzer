@@ -37,7 +37,7 @@ const columns : QTableProps['columns'] = [
   {
     name: 'dateTime',
     align: 'left',
-    label: 'Time',
+    label: 'Time (UTC)',
     field: 'dateTime',
     sortable: false
   },
@@ -49,31 +49,17 @@ const columns : QTableProps['columns'] = [
     sortable: false
   },
   {
-    name: 'byDomain',
+    name: 'by',
     align: 'left',
-    label: 'By Domain',
-    field: 'byDomain',
+    label: 'By',
+    field: 'by',
     sortable: false
   },
   {
-    name: 'byIpAddress',
+    name: 'from',
     align: 'left',
-    label: 'By IpAddress',
-    field: 'byIpAddress',
-    sortable: false
-  },
-  {
-    name: 'fromDomain',
-    align: 'left',
-    label: 'From Domain',
-    field: 'fromDomain',
-    sortable: false
-  },
-  {
-    name: 'fromIpAddress',
-    align: 'left',
-    label: 'From IpAddress',
-    field: 'fromIpAddress',
+    label: 'From',
+    field: 'from',
     sortable: false
   },
   {
@@ -88,7 +74,8 @@ const columns : QTableProps['columns'] = [
     align: 'left',
     label: 'With',
     field: 'with',
-    sortable: false
+    sortable: false,
+    style: 'white-space: pre-wrap;'
   },
   {
     name: 'id',
@@ -106,6 +93,20 @@ const columns : QTableProps['columns'] = [
   }
 ]
 
+function formatDate (date: Date): string {
+  const options : Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'UTC'
+  }
+
+  return new Intl.DateTimeFormat(undefined, options).format(date)
+}
+
 </script>
 
 <template>
@@ -120,7 +121,19 @@ const columns : QTableProps['columns'] = [
   >
     <template #body-cell-dateTime="props">
       <q-td>
-        {{ props.row.dateTime.toISOString() }}
+        {{ formatDate(props.row.dateTime) }}
+      </q-td>
+    </template>
+    <template #body-cell-by="props">
+      <q-td>
+        {{ props.row.byDomain }}<br>
+        {{ props.row.byIpAddress }}
+      </q-td>
+    </template>
+    <template #body-cell-from="props">
+      <q-td>
+        {{ props.row.fromDomain }}<br>
+        {{ props.row.fromIpAddress }}
       </q-td>
     </template>
     <template #body-cell-delay="props">
