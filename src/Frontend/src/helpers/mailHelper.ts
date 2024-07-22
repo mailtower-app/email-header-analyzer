@@ -178,7 +178,7 @@ function splitMailHeader (mailRaw : string) : HeaderDetails[] | undefined {
 
     if (/^\s/.test(line)) {
       // Line is a continuation of the previous header field
-      currentLine += line
+      currentLine += ' ' + line.trim()
     } else {
       // Line is a new header field
       if (currentLine) {
