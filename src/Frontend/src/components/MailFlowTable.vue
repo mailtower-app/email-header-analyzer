@@ -51,14 +51,14 @@ const columns : QTableProps['columns'] = [
   {
     name: 'by',
     align: 'left',
-    label: 'By',
+    label: 'Receiving host (By)',
     field: 'by',
     sortable: false
   },
   {
     name: 'from',
     align: 'left',
-    label: 'From',
+    label: 'Sending host (From)',
     field: 'from',
     sortable: false
   },
