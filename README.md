@@ -2,7 +2,7 @@
 
 Welcome to the Email Header Analyzer WebApp! This application allows users to easily analyze email headers directly in their browser, ensuring complete privacy as no data is transmitted to any server.
 
-try out the [E-mail Header Analyzer](https://mailtower-app.github.io/email-header-analyzer/)
+try out the [E-Mail Header Analyzer](https://mailtower-app.github.io/email-header-analyzer/)
 
 ## Features
 
