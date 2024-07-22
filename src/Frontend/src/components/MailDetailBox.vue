@@ -22,6 +22,7 @@ withDefaults(defineProps<Props>(), {
       <div
         v-for="(detail, index) in details"
         :key="`detail-${index}`"
+        :class="index > 0 ? 'q-mt-lg' : undefined"
       >
         <template v-if="preformatted">
           <pre style="margin: 0px; word-wrap: break-word; white-space: break-spaces;">{{ detail }}</pre>
