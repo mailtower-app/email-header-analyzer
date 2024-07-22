@@ -162,7 +162,7 @@ const otherHeaders = computed(() => {
 
   const filterTerm = filter.value?.toLowerCase()
   if (filterTerm) {
-    return mailHeaderParts.value?.filter(header => header.headerName.toLowerCase().includes(filterTerm))
+    return mailHeaderParts.value?.filter(header => header.headerName.toLowerCase().includes(filterTerm) || header.headerData.toLowerCase().includes(filterTerm))
   }
   return filteredHeaders
 })
