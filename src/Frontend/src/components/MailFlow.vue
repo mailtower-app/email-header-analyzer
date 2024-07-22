@@ -18,7 +18,15 @@ const paddingRight = 5
 const paddingBottom = 5
 
 const maxItemsPerRow = computed(() => {
-  return $q.screen.gt.sm ? 6 : 2
+  if ($q.screen.gt.lg) {
+    return 6
+  } else if ($q.screen.gt.md) {
+    return 5
+  } else if ($q.screen.gt.sm) {
+    return 4
+  }
+
+  return 2
 })
 
 const requiredRows = computed(() => {
