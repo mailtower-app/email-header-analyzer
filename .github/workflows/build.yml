@@ -1,19 +1,14 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: Node.js CI
-
-permissions:
-  contents: write
+name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
-  build:
+
+  build-spa:
 
     runs-on: ubuntu-latest
     env:
@@ -25,7 +20,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 20
-        #cache: 'npm'
     - name: Clean slate
       run: npm ci
       working-directory: ${{env.working-directory}}
@@ -35,7 +29,42 @@ jobs:
     - name: Build
       run: quasar build
       working-directory: ${{env.working-directory}}
-    - name: Deploy 🚀
-      uses: JamesIves/github-pages-deploy-action@v4
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
-        folder: src/Frontend/dist/spa/ # The folder the action should deploy.
+        # Artifact name
+        name: spa
+        # Directory containing files to upload
+        path: ${{env.working-directory}}/dist/spa/
+        # Days before delete
+        retention-days: 1
+        
+  build-docker-spa:
+
+    needs: [build-spa]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: spa
+        path: spa
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./src/Dockerfile-Frontend
+        push: true
+        tags: ghcr.io/${{ github.repository }}/frontend:latest
