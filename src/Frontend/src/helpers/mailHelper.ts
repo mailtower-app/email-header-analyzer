@@ -154,9 +154,12 @@ function decodeMailHeader (mailHeader: string, headerIndex: number): HeaderDetai
 
   const indexOfFirstColon = encodedMailHeader.indexOf(':')
 
+  const headerName = encodedMailHeader.slice(0, indexOfFirstColon).trim()
+  const headerData = encodedMailHeader.slice(indexOfFirstColon + 1).trim()
+
   return {
-    headerName: encodedMailHeader.slice(0, indexOfFirstColon),
-    headerData: encodedMailHeader.slice(indexOfFirstColon + 2),
+    headerName,
+    headerData,
     headerIndex
   }
 }
