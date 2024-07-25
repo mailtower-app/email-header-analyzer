@@ -2,7 +2,7 @@
   "name": "email-header-analyzer",
   "version": "0.0.1",
   "description": "Mail Header Analyzer",
-  "productName": "Mailtower E-Mail Header Analyzer",
+  "productName": "MAILTOWER E-Mail Header Analyzer",
   "author": "Tino Hager <tino.hager@nager.at>",
   "private": true,
   "scripts": {

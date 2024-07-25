@@ -7,7 +7,7 @@
     <q-header>
       <q-toolbar>
         <q-toolbar-title>
-          Mailtower - E-Mail Header Analyzer
+          <span style="font-weight: 600;">MAILTOWER</span> - E-Mail Header Analyzer
         </q-toolbar-title>
 
         <q-btn
