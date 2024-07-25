@@ -54,23 +54,24 @@ const fullResult = computed<FullResult>(() => {
 
   for (const result of results) {
     if (result.startsWith('spf=')) {
-      const regex = /spf=(?<status>[a-z]+)\s\((?<ip>[A-Za-z0-9 .]+)\)\ssmtp\.(?<authenticationSource>[A-Za-z]+)=(?<authenticationData>[A-Za-z0-9-.]+)/
+      const regex = /spf=(?<status>[a-z]+)\s\((?<details>[A-Za-z0-9.:\-@ ]+)\)\ssmtp\.(?<authenticationSource>[A-Za-z]+)=(?<authenticationData>[A-Za-z0-9-.]+)/
       const match = result.match(regex)
 
       spfResult.status = match?.groups?.status
-      spfResult.details = match?.groups?.ip
+      spfResult.details = match?.groups?.details
       spfResult.authenticationSource = match?.groups?.authenticationSource
       spfResult.authenticationData = match?.groups?.authenticationData
       continue
     }
 
     if (result.startsWith('dkim=')) {
-      const regex = /dkim=(?<status>[a-z]+)\s\((?<ip>[A-Za-z0-9 .]+)\)\sheader\.d=(?<headerd>[A-Za-z0-9-.]+)/
+      const regex = /dkim=(?<status>[a-z]+)\s(\((?<details>[A-Za-z0-9 .]+)\)\s)?header\.(i|d)=(?<headerd>[A-Za-z0-9-.@]+)/
       const match = result.match(regex)
+      console.log(result)
 
       const dkimResult : DkimAuthenticationResult = { showError: false }
       dkimResult.status = match?.groups?.status
-      dkimResult.details = match?.groups?.ip
+      dkimResult.details = match?.groups?.details
       dkimResult.headerDomain = match?.groups?.headerd
 
       dkimResults.push(dkimResult)
@@ -80,6 +81,18 @@ const fullResult = computed<FullResult>(() => {
 
     if (result.startsWith('dmarc=')) {
       const regex = /dmarc=(?<status>[a-z]+)\saction=(?<action>[A-Za-z0-9 .]+)\sheader\.from=(?<headerfrom>[A-Za-z0-9-.]+)/
+      const match = result.match(regex)
+
+      if (match) {
+        dmarcResult.status = match?.groups?.status
+        dmarcResult.action = match?.groups?.action
+        dmarcResult.headerFrom = match?.groups?.headerfrom
+        continue
+      }
+    }
+
+    if (result.startsWith('dmarc=')) {
+      const regex = /dmarc=(?<status>[a-z]+)\s\((?<action>[A-Za-z0-9.= ]+)\)\sheader\.from=(?<headerfrom>[A-Za-z0-9-.]+)/
       const match = result.match(regex)
 
       dmarcResult.status = match?.groups?.status
@@ -128,7 +141,7 @@ const fullResult = computed<FullResult>(() => {
 
 <template>
   <div class="row q-col-gutter-sm">
-    <div class="col-12 col-md-6">
+    <div class="col-12 col-lg-6">
       <q-card
         bordered
         flat
@@ -168,7 +181,7 @@ const fullResult = computed<FullResult>(() => {
     <div
       v-for="(dkimResult, index) in fullResult.dkims"
       :key="`dkimResult${index}` "
-      class="col-12 col-md-6"
+      class="col-12 col-lg-6"
     >
       <q-card
         bordered
@@ -207,7 +220,7 @@ const fullResult = computed<FullResult>(() => {
       </q-card>
     </div>
 
-    <div class="col-12 col-md-6">
+    <div class="col-12 col-lg-6">
       <q-card
         bordered
         flat
@@ -245,7 +258,10 @@ const fullResult = computed<FullResult>(() => {
       </q-card>
     </div>
 
-    <div class="col-12 col-md-6">
+    <div
+      v-if="fullResult.compAuth?.status"
+      class="col-12 col-lg-6"
+    >
       <q-card
         bordered
         flat
