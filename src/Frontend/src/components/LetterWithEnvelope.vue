@@ -72,7 +72,7 @@ defineProps<Props>()
         x="7"
         y="6.8"
         style="font:normal 0.7px sans-serif;"
-      >{{ from }}</text>
+      >{{ from?.slice(0, 45) }}</text>
 
       <text
         x="7"
@@ -83,7 +83,7 @@ defineProps<Props>()
         x="7"
         y="8.5"
         style="font:normal 0.7px sans-serif;"
-      >{{ to }}</text>
+      >{{ to?.slice(0, 45) }}</text>
 
       <text
         x="7"

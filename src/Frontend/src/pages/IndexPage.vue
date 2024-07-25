@@ -7,7 +7,7 @@ import { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts'
 import { mailHelper } from 'src/helpers/mailHelper'
 
 import LetterWithEnvelope from 'src/components/LetterWithEnvelope.vue'
-import MailDetailBox from 'src/components/MailDetailBox.vue'
+import MailHeaderDetailBox from 'src/components/MailHeaderDetailBox.vue'
 import MailFlow from 'src/components/MailFlow.vue'
 import MailFlowTable from 'src/components/MailFlowTable.vue'
 
@@ -171,15 +171,28 @@ const otherHeaders = computed(() => {
 
 <template>
   <q-page padding>
-    <div>
-      <q-input
-        v-model="mailHeader"
-        spellcheck="false"
-        placeholder="Paste email headers here"
-        outlined
-        type="textarea"
-        :rows="mailHeader ? 8 : 30"
-      />
+    <div class="row q-col-gutter-sm">
+      <div class="col">
+        <q-input
+          v-model="mailHeader"
+          spellcheck="false"
+          placeholder="Paste email headers here"
+          outlined
+          type="textarea"
+          :rows="mailHeader ? 6 : 30"
+        />
+      </div>
+      <div
+        v-show="mailHeader"
+        style="width: 50px;"
+      >
+        <q-btn
+          flat
+          icon="close"
+          class="cursor-pointer full-width full-height"
+          @click="mailHeader = undefined"
+        />
+      </div>
     </div>
 
     <div
@@ -195,64 +208,64 @@ const otherHeaders = computed(() => {
         />
       </div>
       <div class="col-12 col-md-7">
-        <div class="q-my-md">
-          <div class="q-gutter-sm">
-            <MailDetailBox
+        <div class="q-my-lg">
+          <div class="q-gutter-xs">
+            <MailHeaderDetailBox
               v-if="returnPathHeaders && returnPathHeaders.length > 0"
               name="Return-Path"
               :details="returnPathHeaders?.map(o => o.headerData)"
               :preformatted="false"
             />
-            <MailDetailBox
+            <MailHeaderDetailBox
               v-if="fromHeaders && fromHeaders.length > 0"
               name="From"
               :details="fromHeaders?.map(o => o.headerData)"
               :preformatted="false"
             />
 
-            <MailDetailBox
+            <MailHeaderDetailBox
               v-if="toHeaders && toHeaders.length > 0"
               name="To"
               :details="toHeaders?.map(o => o.headerData)"
               :preformatted="false"
             />
 
-            <MailDetailBox
+            <MailHeaderDetailBox
               v-if="replyToHeaders && replyToHeaders.length > 0"
               name="Reply-To"
               :details="replyToHeaders?.map(o => o.headerData)"
               :preformatted="false"
             />
 
-            <MailDetailBox
+            <MailHeaderDetailBox
               v-if="messageIdHeaders && messageIdHeaders.length > 0"
               name="Message-Id"
               :details="messageIdHeaders?.map(o => o.headerData)"
               :preformatted="false"
             />
 
-            <MailDetailBox
+            <MailHeaderDetailBox
               v-if="dateHeaders && dateHeaders.length > 0"
               name="Date"
               :details="dateHeaders?.map(o => o.headerData)"
               :preformatted="false"
             />
 
-            <MailDetailBox
+            <MailHeaderDetailBox
               v-if="subjectHeaders && subjectHeaders.length > 0"
               name="Subject"
               :details="subjectHeaders?.map(o => o.headerData)"
               :preformatted="false"
             />
 
-            <MailDetailBox
+            <MailHeaderDetailBox
               v-if="authenticationResultsHeaders && authenticationResultsHeaders.length > 0"
               name="Authentication-Results"
-              :details="authenticationResultsHeaders?.map(o => o.headerData.split(';').map(o => o.trim()).join('\n'))"
+              :details="authenticationResultsHeaders.map(o => o.headerData)"
               :preformatted="true"
             />
 
-            <MailDetailBox
+            <MailHeaderDetailBox
               v-if="dkimSignatureHeaders && dkimSignatureHeaders.length > 0"
               name="Dkim Signature"
               :details="dkimSignatureHeaders?.map(o => o.headerData)"
