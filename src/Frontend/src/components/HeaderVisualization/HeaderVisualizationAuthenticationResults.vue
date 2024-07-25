@@ -54,7 +54,7 @@ const fullResult = computed<FullResult>(() => {
 
   for (const result of results) {
     if (result.startsWith('spf=')) {
-      const regex = /spf=(?<status>[a-z]+)\s\((?<details>[A-Za-z0-9.:\-@ ]+)\)\ssmtp\.(?<authenticationSource>[A-Za-z]+)=(?<authenticationData>[A-Za-z0-9-.]+)/
+      const regex = /spf=(?<status>[a-z]+)\s\((?<details>[A-Za-z0-9.:\-@ ]+)\)\ssmtp\.(?<authenticationSource>[A-Za-z]+)=(?<authenticationData>[A-Za-z0-9\-.@]+)/
       const match = result.match(regex)
 
       spfResult.status = match?.groups?.status
@@ -65,7 +65,7 @@ const fullResult = computed<FullResult>(() => {
     }
 
     if (result.startsWith('dkim=')) {
-      const regex = /dkim=(?<status>[a-z]+)\s(\((?<details>[A-Za-z0-9 .]+)\)\s)?header\.(i|d)=(?<headerd>[A-Za-z0-9-.@]+)/
+      const regex = /dkim=(?<status>[a-z]+)\s(\((?<details>[A-Za-z0-9. ]+)\)\s)?header\.(i|d)=(?<headerd>[A-Za-z0-9\-.@]+)/
       const match = result.match(regex)
       console.log(result)
 
