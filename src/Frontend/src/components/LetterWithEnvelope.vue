@@ -106,7 +106,7 @@ defineProps<Props>()
         dominant-baseline="middle"
         text-anchor="middle"
         style="font:italic 1.0px sans-serif;"
-      >{{ returnPath }}</text>
+      >{{ returnPath?.slice(-36) }}</text>
     </g>
   </svg>
 </template>

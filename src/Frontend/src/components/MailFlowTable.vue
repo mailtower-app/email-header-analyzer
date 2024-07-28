@@ -39,7 +39,8 @@ const columns : QTableProps['columns'] = [
     align: 'left',
     label: 'Time (UTC)',
     field: 'dateTime',
-    sortable: false
+    sortable: false,
+    style: 'min-width: 170px;'
   },
   {
     name: 'delay',
@@ -53,21 +54,24 @@ const columns : QTableProps['columns'] = [
     align: 'left',
     label: 'Receiving host (By)',
     field: 'by',
-    sortable: false
+    sortable: false,
+    style: 'max-width: 400px; white-space: pre-line;'
   },
   {
     name: 'from',
     align: 'left',
     label: 'Sending host (From)',
     field: 'from',
-    sortable: false
+    sortable: false,
+    style: 'max-width: 400px; white-space: pre-line;'
   },
   {
     name: 'via',
     align: 'left',
     label: 'Via',
     field: 'via',
-    sortable: false
+    sortable: false,
+    style: 'max-width: 400px; white-space: pre-line;'
   },
   {
     name: 'with',
@@ -75,21 +79,23 @@ const columns : QTableProps['columns'] = [
     label: 'With',
     field: 'with',
     sortable: false,
-    style: 'white-space: pre-wrap;'
+    style: 'max-width: 400px; white-space: pre-line;'
   },
   {
     name: 'id',
     align: 'left',
     label: 'Id',
     field: 'id',
-    sortable: false
+    sortable: false,
+    style: 'max-width: 400px; white-space: pre-line;'
   },
   {
     name: 'for',
     align: 'left',
     label: 'For',
     field: 'for',
-    sortable: false
+    sortable: false,
+    style: 'max-width: 400px; white-space: pre-line;'
   }
 ]
 
@@ -120,24 +126,29 @@ function formatDate (date: Date): string {
     hide-bottom
   >
     <template #body-cell-dateTime="props">
-      <q-td>
+      <q-td :props="props">
         {{ formatDate(props.row.dateTime) }}
       </q-td>
     </template>
     <template #body-cell-by="props">
-      <q-td>
-        {{ props.row.byDomain }}<br>
-        {{ props.row.byIpAddress }}
+      <q-td :props="props">
+        <template v-if="props.row.byDomain">
+          {{ props.row.byDomain }}<br>
+          {{ props.row.byIpAddress }}
+        </template>
+        <template v-else>
+          {{ props.row.rawHeaderDetails.headerData }}
+        </template>
       </q-td>
     </template>
     <template #body-cell-from="props">
-      <q-td>
+      <q-td :props="props">
         {{ props.row.fromDomain }}<br>
         {{ props.row.fromIpAddress }}
       </q-td>
     </template>
     <template #body-cell-delay="props">
-      <q-td>
+      <q-td :props="props">
         <template v-if="delays[props.rowIndex] !== undefined">
           {{ delays[props.rowIndex].toFixed(1) }}s
         </template>
