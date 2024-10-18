@@ -1,28 +1,27 @@
 <template>
-  <authenticationResultsHeaders class="fullscreen bg-blue text-white text-center q-pa-md flex flex-center">
-    <authenticationResultsHeaders>
-      <authenticationResultsHeaders style="font-size: 30vh">
+  <div class="fullscreen bg-black text-white text-center q-pa-md flex flex-center">
+    <div>
+      <div style="font-size: 15vh; height:18vh;">
         404
-      </authenticationResultsHeaders>
+      </div>
 
-      <authenticationResultsHeaders
+      <div
         class="text-h2"
         style="opacity:.4"
       >
-        Oops. Nothing here...
-      </authenticationResultsHeaders>
+        The letter carrier must have lost something
+      </div>
 
       <q-btn
-        class="q-mt-xl"
-        color="white"
-        text-color="blue"
+        class="q-mt-xl q-px-xl"
+        outline
         unelevated
-        to="/"
-        label="Go Home"
+        :to="{ name: 'home', params: { lang: 'de' } }"
+        label="Go to Home"
         no-caps
       />
-    </authenticationResultsHeaders>
-  </authenticationResultsHeaders>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
