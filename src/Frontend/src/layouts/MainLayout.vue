@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <q-layout view="lHh Lpr lff">
     <q-header>
       <q-toolbar>
         <q-toolbar-title
@@ -41,6 +41,7 @@
         flat
         href="https://mailtower.app"
         size="md"
+        color="grey-7"
       >
         Mailtower.app
       </q-btn>
@@ -50,6 +51,7 @@
         flat
         href="https://github.com/mailtower-app/email-header-analyzer"
         size="md"
+        color="grey-7"
       >
         GitHub
       </q-btn>
