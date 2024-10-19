@@ -61,6 +61,15 @@
               </q-item-label>
             </q-item-section>
           </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label>Open Source</q-item-label>
+              <q-item-label caption>
+                The tool's source code is publicly available, allowing users to verify its security and contribute to its development.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
 
         <q-btn
