@@ -1,53 +1,53 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { QTableProps } from 'quasar'
+import { computed } from 'vue';
+import type { QTableProps } from 'quasar';
 
-import { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts'
+import type { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts';
 
 interface Props {
-  receivedHeaders: ReceivedHeaderParts[]
+  receivedHeaders: ReceivedHeaderParts[];
 }
 
-const myProps = defineProps<Props>()
+const myProps = defineProps<Props>();
 
 const delays = computed(() => {
-  const differences: (number | undefined)[] = []
+  const differences: (number | undefined)[] = [];
 
-  differences.push(undefined)
+  differences.push(undefined);
 
   for (let i = 1; i < myProps.receivedHeaders.length; i++) {
-    const previousDate = myProps.receivedHeaders[i - 1].dateTime
-    const currentDate = myProps.receivedHeaders[i].dateTime
+    const previousDate = myProps.receivedHeaders[i - 1]?.dateTime;
+    const currentDate = myProps.receivedHeaders[i]?.dateTime;
 
     if (!previousDate || !currentDate) {
-      differences.push(0)
-      continue
+      differences.push(0);
+      continue;
     }
 
-    const diffInMs = currentDate.getTime() - previousDate.getTime()
-    const diffInMinutes = diffInMs / 1000
+    const diffInMs = currentDate.getTime() - previousDate.getTime();
+    const diffInMinutes = diffInMs / 1000;
 
-    differences.push(diffInMinutes)
+    differences.push(diffInMinutes);
   }
 
-  return differences
-})
+  return differences;
+});
 
-const columns : QTableProps['columns'] = [
+const columns: QTableProps['columns'] = [
   {
     name: 'dateTime',
     align: 'left',
     label: 'Time (UTC)',
     field: 'dateTime',
     sortable: false,
-    style: 'min-width: 170px;'
+    style: 'min-width: 170px;',
   },
   {
     name: 'delay',
     align: 'left',
     label: 'Delay',
     field: 'delay',
-    sortable: false
+    sortable: false,
   },
   {
     name: 'by',
@@ -55,7 +55,7 @@ const columns : QTableProps['columns'] = [
     label: 'Receiving host (By)',
     field: 'by',
     sortable: false,
-    style: 'max-width: 400px; white-space: pre-line;'
+    style: 'max-width: 400px; white-space: pre-line;',
   },
   {
     name: 'from',
@@ -63,7 +63,7 @@ const columns : QTableProps['columns'] = [
     label: 'Sending host (From)',
     field: 'from',
     sortable: false,
-    style: 'max-width: 400px; white-space: pre-line;'
+    style: 'max-width: 400px; white-space: pre-line;',
   },
   {
     name: 'via',
@@ -71,7 +71,7 @@ const columns : QTableProps['columns'] = [
     label: 'Via',
     field: 'via',
     sortable: false,
-    style: 'max-width: 400px; white-space: pre-line;'
+    style: 'max-width: 400px; white-space: pre-line;',
   },
   {
     name: 'with',
@@ -79,7 +79,7 @@ const columns : QTableProps['columns'] = [
     label: 'With',
     field: 'with',
     sortable: false,
-    style: 'max-width: 400px; white-space: pre-line;'
+    style: 'max-width: 400px; white-space: pre-line;',
   },
   {
     name: 'id',
@@ -87,7 +87,7 @@ const columns : QTableProps['columns'] = [
     label: 'Id',
     field: 'id',
     sortable: false,
-    style: 'max-width: 400px; white-space: pre-line;'
+    style: 'max-width: 400px; white-space: pre-line;',
   },
   {
     name: 'for',
@@ -95,24 +95,23 @@ const columns : QTableProps['columns'] = [
     label: 'For',
     field: 'for',
     sortable: false,
-    style: 'max-width: 400px; white-space: pre-line;'
-  }
-]
+    style: 'max-width: 400px; white-space: pre-line;',
+  },
+];
 
-function formatDate (date: Date): string {
-  const options : Intl.DateTimeFormatOptions = {
+function formatDate(date: Date): string {
+  const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    timeZone: 'UTC'
-  }
+    timeZone: 'UTC',
+  };
 
-  return new Intl.DateTimeFormat(undefined, options).format(date)
+  return new Intl.DateTimeFormat(undefined, options).format(date);
 }
-
 </script>
 
 <template>
@@ -133,7 +132,7 @@ function formatDate (date: Date): string {
     <template #body-cell-by="props">
       <q-td :props="props">
         <template v-if="props.row.byDomain">
-          {{ props.row.byDomain }}<br>
+          {{ props.row.byDomain }}<br />
           {{ props.row.byIpAddress }}
         </template>
         <template v-else>
@@ -143,14 +142,14 @@ function formatDate (date: Date): string {
     </template>
     <template #body-cell-from="props">
       <q-td :props="props">
-        {{ props.row.fromDomain }}<br>
+        {{ props.row.fromDomain }}<br />
         {{ props.row.fromIpAddress }}
       </q-td>
     </template>
     <template #body-cell-delay="props">
       <q-td :props="props">
         <template v-if="delays[props.rowIndex] !== undefined">
-          {{ delays[props.rowIndex].toFixed(1) }}s
+          {{ delays[props.rowIndex]?.toFixed(1) }}s
         </template>
       </q-td>
     </template>

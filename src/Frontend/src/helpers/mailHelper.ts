@@ -1,208 +1,217 @@
-import { HeaderDetails } from 'src/models/HeaderDetails'
-import { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts'
+import type { HeaderDetails } from 'src/models/HeaderDetails';
+import type { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts';
 
-function splitMailHeaderDomainIpAddress (receiveHeader : string) : string[] {
-  const indexOfOpeningRoundClamp = receiveHeader.indexOf('(')
+function splitMailHeaderDomainIpAddress(receiveHeader: string): string[] {
+  const indexOfOpeningRoundClamp = receiveHeader.indexOf('(');
   if (indexOfOpeningRoundClamp === -1) {
-    return [receiveHeader]
+    return [receiveHeader];
   }
 
-  const hostname = receiveHeader.slice(0, indexOfOpeningRoundClamp).trim()
-  const ipAddress = receiveHeader.slice(indexOfOpeningRoundClamp + 1, receiveHeader.indexOf(')')).trim()
+  const hostname = receiveHeader.slice(0, indexOfOpeningRoundClamp).trim();
+  const ipAddress = receiveHeader
+    .slice(indexOfOpeningRoundClamp + 1, receiveHeader.indexOf(')'))
+    .trim();
 
-  return [hostname, ipAddress]
+  return [hostname, ipAddress];
 }
 
-function parseReceivedHeader (headerDetails: HeaderDetails): ReceivedHeaderParts {
-  const textPartFrom = 'from'
-  const textPartBy = 'by'
-  const textPartWith = 'with'
-  const textPartId = 'id'
-  const textPartVia = 'via'
+function parseReceivedHeader(headerDetails: HeaderDetails): ReceivedHeaderParts {
+  const textPartFrom = 'from';
+  const textPartBy = 'by';
+  const textPartWith = 'with';
+  const textPartId = 'id';
+  const textPartVia = 'via';
 
-  const result : ReceivedHeaderParts = {
-    rawHeaderDetails: headerDetails
-  }
+  const result: ReceivedHeaderParts = {
+    rawHeaderDetails: headerDetails,
+  };
 
   if (!headerDetails.headerData) {
-    return result
+    return result;
   }
 
-  let tempHeader = headerDetails.headerData
+  let tempHeader = headerDetails.headerData;
 
   // Extract Date at the end
 
-  const indexOfSemilicon = headerDetails.headerData.lastIndexOf(';')
+  const indexOfSemilicon = headerDetails.headerData.lastIndexOf(';');
   if (indexOfSemilicon !== -1) {
-    const tempDate = headerDetails.headerData.slice(indexOfSemilicon + 1).trim()
-    result.dateTime = new Date(tempDate)
-    tempHeader = headerDetails.headerData.slice(0, indexOfSemilicon)
+    const tempDate = headerDetails.headerData.slice(indexOfSemilicon + 1).trim();
+    result.dateTime = new Date(tempDate);
+    tempHeader = headerDetails.headerData.slice(0, indexOfSemilicon);
   }
 
   // Section - from
 
-  const startIndexFrom = tempHeader.indexOf(`${textPartFrom} `)
+  const startIndexFrom = tempHeader.indexOf(`${textPartFrom} `);
 
-  let dataStartIndexFrom = 0
+  let dataStartIndexFrom = 0;
   if (startIndexFrom >= 0) {
-    dataStartIndexFrom = startIndexFrom + textPartFrom.length + 1
+    dataStartIndexFrom = startIndexFrom + textPartFrom.length + 1;
   }
 
   // Section - by
 
-  const startIndexBy = tempHeader.indexOf(`${textPartBy} `, dataStartIndexFrom)
+  const startIndexBy = tempHeader.indexOf(`${textPartBy} `, dataStartIndexFrom);
   if (startIndexBy === -1) {
-    return result
+    return result;
   }
 
   if (startIndexFrom !== -1) {
-    const tempFrom = tempHeader.slice(dataStartIndexFrom, startIndexBy - 1)
-    const fromParts = splitMailHeaderDomainIpAddress(tempFrom)
+    const tempFrom = tempHeader.slice(dataStartIndexFrom, startIndexBy - 1);
+    const fromParts = splitMailHeaderDomainIpAddress(tempFrom);
 
-    result.fromDomain = fromParts[0]
-    result.fromIpAddress = fromParts[1]
+    result.fromDomain = fromParts[0] ?? '';
+    result.fromIpAddress = fromParts[1] ?? '';
   }
 
-  const dataStartIndexBy = startIndexBy + textPartBy.length + 1
+  const dataStartIndexBy = startIndexBy + textPartBy.length + 1;
 
   // Section - with
 
-  const startIndexWith = tempHeader.indexOf(`${textPartWith} `, dataStartIndexBy)
+  const startIndexWith = tempHeader.indexOf(`${textPartWith} `, dataStartIndexBy);
   if (startIndexWith === -1) {
-    return result
+    return result;
   }
 
-  const tempBy = tempHeader.slice(dataStartIndexBy, startIndexWith - 1)
-  const byParts = splitMailHeaderDomainIpAddress(tempBy)
+  const tempBy = tempHeader.slice(dataStartIndexBy, startIndexWith - 1);
+  const byParts = splitMailHeaderDomainIpAddress(tempBy);
 
-  result.byDomain = byParts[0]
-  result.byIpAddress = byParts[1]
+  result.byDomain = byParts[0] ?? '';
+  result.byIpAddress = byParts[1] ?? '';
 
-  const dataStartIndexWith = startIndexWith + textPartWith.length + 1
-  let dataEndIndexWith = tempHeader.length
+  const dataStartIndexWith = startIndexWith + textPartWith.length + 1;
+  let dataEndIndexWith = tempHeader.length;
 
   // Prepare for optional
 
-  let startIndexNextSearch = dataStartIndexWith
+  let startIndexNextSearch = dataStartIndexWith;
 
   // Section - id
 
-  const startIndexId = tempHeader.indexOf(`${textPartId} `, startIndexNextSearch)
-  let dataStartIndexId = 0
-  let dataEndIndexId = 0
+  const startIndexId = tempHeader.indexOf(`${textPartId} `, startIndexNextSearch);
+  let dataStartIndexId = 0;
+  let dataEndIndexId = 0;
   if (startIndexId !== -1) {
-    dataStartIndexId = startIndexId + textPartId.length + 1
-    startIndexNextSearch = dataStartIndexId
+    dataStartIndexId = startIndexId + textPartId.length + 1;
+    startIndexNextSearch = dataStartIndexId;
 
-    dataEndIndexWith = startIndexId - 1
+    dataEndIndexWith = startIndexId - 1;
   }
 
   // Section - via
 
-  const startIndexVia = tempHeader.indexOf(`${textPartVia} `, startIndexNextSearch)
-  let dataStartIndexVia = 0
-  let dataEndIndexVia = 0
+  const startIndexVia = tempHeader.indexOf(`${textPartVia} `, startIndexNextSearch);
+  let dataStartIndexVia = 0;
+  let dataEndIndexVia = 0;
   if (startIndexVia !== -1) {
-    dataStartIndexVia = startIndexVia + textPartVia.length + 1
+    dataStartIndexVia = startIndexVia + textPartVia.length + 1;
 
-    startIndexNextSearch = dataStartIndexVia
+    startIndexNextSearch = dataStartIndexVia;
 
-    dataEndIndexId = startIndexVia - 1
+    dataEndIndexId = startIndexVia - 1;
 
-    dataEndIndexVia = tempHeader.length
+    dataEndIndexVia = tempHeader.length;
   } else {
-    dataEndIndexId = tempHeader.length
+    dataEndIndexId = tempHeader.length;
   }
 
   // Extract data
 
   if (dataStartIndexWith > 0) {
-    result.with = tempHeader.slice(dataStartIndexWith, dataEndIndexWith)
+    result.with = tempHeader.slice(dataStartIndexWith, dataEndIndexWith);
   }
   if (dataStartIndexId > 0) {
-    result.id = tempHeader.slice(dataStartIndexId, dataEndIndexId)
+    result.id = tempHeader.slice(dataStartIndexId, dataEndIndexId);
   }
   if (dataStartIndexVia > 0) {
-    result.via = tempHeader.slice(dataStartIndexVia, dataEndIndexVia)
+    result.via = tempHeader.slice(dataStartIndexVia, dataEndIndexVia);
   }
 
-  return result
+  return result;
 }
 
-function decodeBase64 (encodedText: string, charset: string): string {
-  const decodedText = atob(encodedText)
-  return new TextDecoder(charset).decode(new Uint8Array([...decodedText].map(char => char.charCodeAt(0))))
+function decodeBase64(encodedText: string, charset: string): string {
+  const decodedText = atob(encodedText);
+  return new TextDecoder(charset).decode(
+    new Uint8Array([...decodedText].map((char) => char.charCodeAt(0))),
+  );
 }
 
-function decodeQuotedPrintable (encodedText: string, charset: string): string {
+function decodeQuotedPrintable(encodedText: string, charset: string): string {
   const decodedText = encodedText.replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => {
-    return String.fromCharCode(parseInt(hex, 16))
-  })
+    return String.fromCharCode(parseInt(hex, 16));
+  });
 
-  return new TextDecoder(charset).decode(new Uint8Array([...decodedText].map(char => char.charCodeAt(0))))
+  return new TextDecoder(charset).decode(
+    new Uint8Array([...decodedText].map((char) => char.charCodeAt(0))),
+  );
 }
 
-function decodeMailHeader (mailHeader: string, headerIndex: number): HeaderDetails {
-  const encodedMailHeader = mailHeader.replace(/\s=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi, (_, charset, encoding, encodedText) => {
-    if (encoding.toUpperCase() === 'B') {
-      return decodeBase64(encodedText, charset)
-    } else if (encoding.toUpperCase() === 'Q') {
-      return decodeQuotedPrintable(encodedText, charset).trim()
-    }
-    return mailHeader
-  })
+function decodeMailHeader(mailHeader: string, headerIndex: number): HeaderDetails {
+  const encodedMailHeader = mailHeader.replace(
+    /\s=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi,
+    (_, charset, encoding, encodedText) => {
+      if (encoding.toUpperCase() === 'B') {
+        return decodeBase64(encodedText, charset);
+      } else if (encoding.toUpperCase() === 'Q') {
+        return decodeQuotedPrintable(encodedText, charset).trim();
+      }
+      return mailHeader;
+    },
+  );
 
-  const indexOfFirstColon = encodedMailHeader.indexOf(':')
+  const indexOfFirstColon = encodedMailHeader.indexOf(':');
 
-  const headerName = encodedMailHeader.slice(0, indexOfFirstColon).trim()
-  const headerData = encodedMailHeader.slice(indexOfFirstColon + 1).trim()
+  const headerName = encodedMailHeader.slice(0, indexOfFirstColon).trim();
+  const headerData = encodedMailHeader.slice(indexOfFirstColon + 1).trim();
 
   return {
     headerName,
     headerData,
-    headerIndex
-  }
+    headerIndex,
+  };
 }
 
-function splitMailHeader (mailRaw : string) : HeaderDetails[] | undefined {
-  const lines = mailRaw.split(/\r?\n/)
+function splitMailHeader(mailRaw: string): HeaderDetails[] | undefined {
+  const lines = mailRaw.split(/\r?\n/);
   if (!lines) {
-    return undefined
+    return undefined;
   }
 
-  const formattedHeader = []
-  let currentLine = ''
-  let headerIndex = 0
+  const formattedHeader = [];
+  let currentLine = '';
+  let headerIndex = 0;
 
   for (const line of lines) {
     if (!line) {
-      break
+      break;
     }
 
     if (/^\s/.test(line)) {
       // Line is a continuation of the previous header field
-      currentLine += ' ' + line.trim()
+      currentLine += ' ' + line.trim();
     } else {
       // Line is a new header field
       if (currentLine) {
-        formattedHeader.push(decodeMailHeader(currentLine, headerIndex))
-        headerIndex++
+        formattedHeader.push(decodeMailHeader(currentLine, headerIndex));
+        headerIndex++;
       }
 
-      currentLine = line
+      currentLine = line;
     }
   }
 
   // Push the last accumulated line
   if (currentLine) {
-    formattedHeader.push(decodeMailHeader(currentLine, headerIndex))
+    formattedHeader.push(decodeMailHeader(currentLine, headerIndex));
   }
 
   // Join the formatted header lines with new lines
-  return formattedHeader
+  return formattedHeader;
 }
 
 export const mailHelper = {
   splitMailHeader,
-  parseReceivedHeader
-}
+  parseReceivedHeader,
+};

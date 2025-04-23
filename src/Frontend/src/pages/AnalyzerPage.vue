@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { QTableProps } from 'quasar'
+import { ref, computed } from 'vue';
+import type { QTableProps } from 'quasar';
 
-import { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts'
+import type { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts';
 
-import { mailHelper } from 'src/helpers/mailHelper'
+import { mailHelper } from 'src/helpers/mailHelper';
 
-import LetterWithEnvelope from 'src/components/LetterWithEnvelope.vue'
-import MailHeaderDetailBox from 'src/components/MailHeaderDetailBox.vue'
-import MailFlow from 'src/components/MailFlow.vue'
-import MailFlowTable from 'src/components/MailFlowTable.vue'
+import LetterWithEnvelope from 'src/components/LetterWithEnvelope.vue';
+import MailHeaderDetailBox from 'src/components/MailHeaderDetailBox.vue';
+import MailFlow from 'src/components/MailFlow.vue';
+import MailFlowTable from 'src/components/MailFlowTable.vue';
 
 const MailHeaders = {
   From: 'From',
@@ -21,20 +21,20 @@ const MailHeaders = {
   MessageId: 'Message-Id',
   Date: 'Date',
   DkimSignature: 'DKIM-Signature',
-  AuthenticationResults: 'Authentication-Results'
-}
+  AuthenticationResults: 'Authentication-Results',
+};
 
-const mailHeader = ref<string>()
-const filter = ref<string | undefined>()
+const mailHeader = ref<string>();
+const filter = ref<string | undefined>();
 
-const columns : QTableProps['columns'] = [
+const columns: QTableProps['columns'] = [
   {
     name: 'headerName',
     align: 'left',
     label: 'Name',
     field: 'headerName',
     sortable: false,
-    style: 'width: 300px'
+    style: 'width: 300px',
   },
   {
     name: 'headerData',
@@ -42,7 +42,7 @@ const columns : QTableProps['columns'] = [
     label: 'Data',
     field: 'headerData',
     sortable: false,
-    classes: 'text-break'
+    classes: 'text-break',
   },
   {
     name: 'headerIndex',
@@ -50,123 +50,136 @@ const columns : QTableProps['columns'] = [
     label: 'Index',
     field: 'headerIndex',
     sortable: false,
-    style: 'width: 70px'
-  }
-]
+    style: 'width: 70px',
+  },
+];
 
 const mailHeaderParts = computed(() => {
   if (!mailHeader.value) {
-    return undefined
+    return undefined;
   }
 
   try {
-    return mailHelper.splitMailHeader(mailHeader.value)
+    return mailHelper.splitMailHeader(mailHeader.value);
   } catch (error) {
-    console.error(error)
-    return undefined
+    console.error(error);
+    return undefined;
   }
-})
+});
 
 const returnPathHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.ReturnPath)
-})
+  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.ReturnPath);
+});
 
 const returnPath = computed(() => {
   if (!returnPathHeaders.value || returnPathHeaders.value.length === 0) {
-    return undefined
+    return undefined;
   }
 
-  return returnPathHeaders.value[0].headerData
-})
+  return returnPathHeaders.value[0]?.headerData;
+});
 
 const fromHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.From)
-})
+  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.From);
+});
 
 const from = computed(() => {
   if (!fromHeaders.value || fromHeaders.value.length === 0) {
-    return undefined
+    return undefined;
   }
 
-  return fromHeaders.value[0].headerData
-})
+  return fromHeaders.value[0]?.headerData;
+});
 
 const toHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.To)
-})
+  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.To);
+});
 
 const to = computed(() => {
   if (!toHeaders.value || toHeaders.value.length === 0) {
-    return undefined
+    return undefined;
   }
 
-  return toHeaders.value[0].headerData
-})
+  return toHeaders.value[0]?.headerData;
+});
 
 const dateHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.Date)
-})
+  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.Date);
+});
 
 const messageIdHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(header => header.headerName.toLowerCase() === MailHeaders.MessageId.toLowerCase())
-})
+  return mailHeaderParts.value?.filter(
+    (header) => header.headerName.toLowerCase() === MailHeaders.MessageId.toLowerCase(),
+  );
+});
 
 const subjectHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.Subject)
-})
+  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.Subject);
+});
 
 const subject = computed(() => {
   if (!subjectHeaders.value || subjectHeaders.value.length === 0) {
-    return undefined
+    return undefined;
   }
 
-  return subjectHeaders.value[0].headerData
-})
+  return subjectHeaders.value[0]?.headerData;
+});
 
 const receivedHeaders = computed<ReceivedHeaderParts[] | undefined>(() => {
   if (!mailHeaderParts.value) {
-    return undefined
+    return undefined;
   }
-  const filteredHeaders = mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.Received)
+  const filteredHeaders = mailHeaderParts.value?.filter(
+    (header) => header.headerName === MailHeaders.Received,
+  );
 
   if (!filteredHeaders) {
-    return undefined
+    return undefined;
   }
 
-  const items = filteredHeaders.filter(o => o.headerData).map(headerDetail => mailHelper.parseReceivedHeader(headerDetail))
+  const items = filteredHeaders
+    .filter((o) => o.headerData)
+    .map((headerDetail) => mailHelper.parseReceivedHeader(headerDetail));
 
   items?.sort((a, b) => {
     if (a.rawHeaderDetails.headerIndex && b.rawHeaderDetails.headerIndex) {
-      return b.rawHeaderDetails.headerIndex - a.rawHeaderDetails.headerIndex
+      return b.rawHeaderDetails.headerIndex - a.rawHeaderDetails.headerIndex;
     }
-    return -1
-  })
-  return items
-})
+    return -1;
+  });
+  return items;
+});
 
 const replyToHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.ReplyTo)
-})
+  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.ReplyTo);
+});
 
 const authenticationResultsHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.AuthenticationResults)
-})
+  return mailHeaderParts.value?.filter(
+    (header) => header.headerName === MailHeaders.AuthenticationResults,
+  );
+});
 
 const dkimSignatureHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(header => header.headerName === MailHeaders.DkimSignature)
-})
+  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.DkimSignature);
+});
 
 const otherHeaders = computed(() => {
-  const ignoreHeaderNames = Object.values(MailHeaders)
-  const filteredHeaders = mailHeaderParts.value?.filter(header => !ignoreHeaderNames.includes(header.headerName))
+  const ignoreHeaderNames = Object.values(MailHeaders);
+  const filteredHeaders = mailHeaderParts.value?.filter(
+    (header) => !ignoreHeaderNames.includes(header.headerName),
+  );
 
-  const filterTerm = filter.value?.toLowerCase()
+  const filterTerm = filter.value?.toLowerCase();
   if (filterTerm) {
-    return mailHeaderParts.value?.filter(header => header.headerName.toLowerCase().includes(filterTerm) || header.headerData.toLowerCase().includes(filterTerm))
+    return mailHeaderParts.value?.filter(
+      (header) =>
+        header.headerName.toLowerCase().includes(filterTerm) ||
+        header.headerData.toLowerCase().includes(filterTerm),
+    );
   }
-  return filteredHeaders
-})
-
+  return filteredHeaders;
+});
 </script>
 
 <template>
@@ -182,10 +195,7 @@ const otherHeaders = computed(() => {
           :rows="mailHeader ? 6 : 30"
         />
       </div>
-      <div
-        v-show="mailHeader"
-        style="width: 50px;"
-      >
+      <div v-show="mailHeader" style="width: 50px">
         <q-btn
           flat
           icon="close"
@@ -195,17 +205,9 @@ const otherHeaders = computed(() => {
       </div>
     </div>
 
-    <div
-      v-if="mailHeader"
-      class="row"
-    >
+    <div v-if="mailHeader" class="row">
       <div class="col-12 col-md-5">
-        <LetterWithEnvelope
-          :to="to"
-          :from="from"
-          :subject="subject"
-          :return-path="returnPath"
-        />
+        <LetterWithEnvelope :to="to" :from="from" :subject="subject" :return-path="returnPath" />
       </div>
       <div class="col-12 col-md-7">
         <div class="q-my-lg">
@@ -213,62 +215,62 @@ const otherHeaders = computed(() => {
             <MailHeaderDetailBox
               v-if="returnPathHeaders && returnPathHeaders.length > 0"
               name="Return-Path"
-              :details="returnPathHeaders?.map(o => o.headerData)"
+              :details="returnPathHeaders?.map((o) => o.headerData)"
               :preformatted="false"
             />
             <MailHeaderDetailBox
               v-if="fromHeaders && fromHeaders.length > 0"
               name="From"
-              :details="fromHeaders?.map(o => o.headerData)"
+              :details="fromHeaders?.map((o) => o.headerData)"
               :preformatted="false"
             />
 
             <MailHeaderDetailBox
               v-if="toHeaders && toHeaders.length > 0"
               name="To"
-              :details="toHeaders?.map(o => o.headerData)"
+              :details="toHeaders?.map((o) => o.headerData)"
               :preformatted="false"
             />
 
             <MailHeaderDetailBox
               v-if="replyToHeaders && replyToHeaders.length > 0"
               name="Reply-To"
-              :details="replyToHeaders?.map(o => o.headerData)"
+              :details="replyToHeaders?.map((o) => o.headerData)"
               :preformatted="false"
             />
 
             <MailHeaderDetailBox
               v-if="messageIdHeaders && messageIdHeaders.length > 0"
               name="Message-Id"
-              :details="messageIdHeaders?.map(o => o.headerData)"
+              :details="messageIdHeaders?.map((o) => o.headerData)"
               :preformatted="false"
             />
 
             <MailHeaderDetailBox
               v-if="dateHeaders && dateHeaders.length > 0"
               name="Date"
-              :details="dateHeaders?.map(o => o.headerData)"
+              :details="dateHeaders?.map((o) => o.headerData)"
               :preformatted="false"
             />
 
             <MailHeaderDetailBox
               v-if="subjectHeaders && subjectHeaders.length > 0"
               name="Subject"
-              :details="subjectHeaders?.map(o => o.headerData)"
+              :details="subjectHeaders?.map((o) => o.headerData)"
               :preformatted="false"
             />
 
             <MailHeaderDetailBox
               v-if="authenticationResultsHeaders && authenticationResultsHeaders.length > 0"
               name="Authentication-Results"
-              :details="authenticationResultsHeaders.map(o => o.headerData)"
+              :details="authenticationResultsHeaders.map((o) => o.headerData)"
               :preformatted="true"
             />
 
             <MailHeaderDetailBox
               v-if="dkimSignatureHeaders && dkimSignatureHeaders.length > 0"
               name="Dkim Signature"
-              :details="dkimSignatureHeaders?.map(o => o.headerData)"
+              :details="dkimSignatureHeaders?.map((o) => o.headerData)"
               :preformatted="false"
             />
           </div>
@@ -277,10 +279,7 @@ const otherHeaders = computed(() => {
     </div>
     <div v-if="mailHeader">
       <h2>Mail Hops</h2>
-      <div
-        v-if="receivedHeaders"
-        class="q-mt-sm"
-      >
+      <div v-if="receivedHeaders" class="q-mt-sm">
         <MailFlow :received-headers="receivedHeaders" />
         <MailFlowTable :received-headers="receivedHeaders" />
       </div>
