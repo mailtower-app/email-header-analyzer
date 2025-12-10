@@ -16,11 +16,16 @@ withDefaults(defineProps<Props>(), {
 <template>
   <q-card bordered flat>
     <q-card-section class="q-pa-none" :horizontal="$q.screen.gt.xs">
-      <q-card-section class="col-3 col-md-2 q-pa-sm bg-grey-2">
-        {{ name }}
+      <q-card-section class="col-3 col-md-2 q-pa-sm q-pr-md bg-grey-2 text-right">
+        {{ name }}:
       </q-card-section>
-      <q-card-section class="col-9 col-md-10 q-pa-sm bg-grey-1">
-        <q-badge v-if="(details?.length ?? 0) > 1" floating>
+      <q-card-section class="col-9 col-md-10 q-pa-sm q-pl-md bg-grey-1">
+        <q-badge
+          v-if="(details?.length ?? 0) > 1"
+          floating
+          color="primary"
+          class="q-px-sm q-py-xs q-mr-sm"
+        >
           {{ details?.length }}
         </q-badge>
         <div

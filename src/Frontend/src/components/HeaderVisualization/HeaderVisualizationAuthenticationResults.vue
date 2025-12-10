@@ -82,6 +82,7 @@ const fullResult = computed<FullResult>(() => {
     }
 
     if (result.startsWith('dmarc=')) {
+      //dmarc=pass action=none header.from=github.com;
       const regex =
         /dmarc=(?<status>[a-z]+)\saction=(?<action>[A-Za-z0-9 .]+)\sheader\.from=(?<headerfrom>[A-Za-z0-9-.]+)/;
       const match = result.match(regex);
@@ -94,7 +95,9 @@ const fullResult = computed<FullResult>(() => {
       }
     }
 
+    //Google's format, no action field
     if (result.startsWith('dmarc=')) {
+      //dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=config.fail
       const regex =
         /dmarc=(?<status>[a-z]+)\s\((?<action>[A-Za-z0-9.= ]+)\)\sheader\.from=(?<headerfrom>[A-Za-z0-9-.]+)/;
       const match = result.match(regex);
