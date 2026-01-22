@@ -55,7 +55,7 @@ const fullResult = computed<FullResult>(() => {
   for (const result of results) {
     if (result.startsWith('spf=')) {
       const regex =
-        /spf=(?<status>[a-z]+)\s\((?<details>[A-Za-z0-9.:\-@ ]+)\)\ssmtp\.(?<authenticationSource>[A-Za-z]+)=(?<authenticationData>[A-Za-z0-9\-.@]+)/;
+        /spf=(?<status>[a-z]+)\s(\((?<details>[A-Za-z0-9.:\-@ ]+)\)\s)?smtp\.(?<authenticationSource>[A-Za-z]+)=(?<authenticationData>[A-Za-z0-9\-.@]+)/;
       const match = result.match(regex);
 
       spfResult.status = match?.groups?.status ?? '';
@@ -69,7 +69,6 @@ const fullResult = computed<FullResult>(() => {
       const regex =
         /dkim=(?<status>[a-z]+)\s(\((?<details>[A-Za-z0-9. ]+)\)\s)?header\.(i|d)=(?<headerd>[A-Za-z0-9\-.@]+)/;
       const match = result.match(regex);
-      console.log(result);
 
       const dkimResult: DkimAuthenticationResult = { showError: false };
       dkimResult.status = match?.groups?.status ?? '';
@@ -83,8 +82,9 @@ const fullResult = computed<FullResult>(() => {
 
     if (result.startsWith('dmarc=')) {
       //dmarc=pass action=none header.from=github.com;
+      //dmarc=skipped
       const regex =
-        /dmarc=(?<status>[a-z]+)\saction=(?<action>[A-Za-z0-9 .]+)\sheader\.from=(?<headerfrom>[A-Za-z0-9-.]+)/;
+        /dmarc=(?<status>[a-z]+)(\saction=(?<action>[A-Za-z0-9 .]+))?(\sheader\.from=(?<headerfrom>[A-Za-z0-9-.]+))?/;
       const match = result.match(regex);
 
       if (match) {
