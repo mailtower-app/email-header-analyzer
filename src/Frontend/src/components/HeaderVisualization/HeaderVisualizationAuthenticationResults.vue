@@ -36,21 +36,28 @@ interface CompAuthResult {
 }
 
 interface FullResult {
-  spf?: SpfAuthenticationResult;
+  spf?: SpfAuthenticationResult | undefined;
   dkims?: DkimAuthenticationResult[];
-  dmarc?: DmarcAuthenticationResult;
-  compAuth?: CompAuthResult;
+  dmarc?: DmarcAuthenticationResult | undefined;
+  compAuth?: CompAuthResult | undefined;
 }
 
 const props = defineProps<Props>();
 
-const fullResult = computed<FullResult>(() => {
-  const results = props.detail.split(';').map((o) => o.trim());
+const splitAuthResults = (input: string): string[] => {
+  return input
+    .split(/;(?![^(]*\))/)
+    .map(x => x.trim())
+    .filter(x => x.length > 0);
+};
 
-  const spfResult: SpfAuthenticationResult = { showError: false };
+const fullResult = computed<FullResult>(() => {
+  const results = splitAuthResults(props.detail);
+
+  let spfResult: SpfAuthenticationResult | undefined = undefined;
   const dkimResults: DkimAuthenticationResult[] = [];
-  const dmarcResult: DmarcAuthenticationResult = { showError: false };
-  const compAuthResult: CompAuthResult = { showError: false };
+  let dmarcResult: DmarcAuthenticationResult | undefined = undefined;
+  let compAuthResult: CompAuthResult | undefined = undefined;
 
   for (const result of results) {
     if (result.startsWith('spf=')) {
@@ -58,16 +65,20 @@ const fullResult = computed<FullResult>(() => {
         /spf=(?<status>[a-z]+)\s(\((?<details>[A-Za-z0-9.:\-@ ]+)\)\s)?smtp\.(?<authenticationSource>[A-Za-z]+)=(?<authenticationData>[A-Za-z0-9\-.@]+)/;
       const match = result.match(regex);
 
-      spfResult.status = match?.groups?.status ?? '';
-      spfResult.details = match?.groups?.details ?? '';
-      spfResult.authenticationSource = match?.groups?.authenticationSource ?? '';
-      spfResult.authenticationData = match?.groups?.authenticationData ?? '';
+      spfResult = {
+        showError: false,
+        status: match?.groups?.status ?? '',
+        details: match?.groups?.details ?? '',
+        authenticationSource: match?.groups?.authenticationSource ?? '',
+        authenticationData: match?.groups?.authenticationData ?? ''
+      }
+
       continue;
     }
 
     if (result.startsWith('dkim=')) {
       const regex =
-        /dkim=(?<status>[a-z]+)\s(\((?<details>[A-Za-z0-9. ]+)\)\s)?header\.(i|d)=(?<headerd>[A-Za-z0-9\-.@]+)/;
+        /dkim=(?<status>[a-z]+)\s(\((?<details>[A-Za-z0-9.;\- ]+)\)\s)?header\.(i|d)=(?<headerd>[A-Za-z0-9\-.@]+)/;
       const match = result.match(regex);
 
       const dkimResult: DkimAuthenticationResult = { showError: false };
@@ -81,6 +92,11 @@ const fullResult = computed<FullResult>(() => {
     }
 
     if (result.startsWith('dmarc=')) {
+
+      dmarcResult = {
+        showError: false
+      }
+
       //dmarc=pass action=none header.from=github.com;
       //dmarc=skipped
       const regex =
@@ -93,22 +109,27 @@ const fullResult = computed<FullResult>(() => {
         dmarcResult.headerFrom = match?.groups?.headerfrom ?? '';
         continue;
       }
-    }
 
-    //Google's format, no action field
-    if (result.startsWith('dmarc=')) {
+      //Google's format, no action field
       //dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=config.fail
-      const regex =
+      const regex1 =
         /dmarc=(?<status>[a-z]+)\s\((?<action>[A-Za-z0-9.= ]+)\)\sheader\.from=(?<headerfrom>[A-Za-z0-9-.]+)/;
-      const match = result.match(regex);
+      const match1 = result.match(regex1);
 
-      dmarcResult.status = match?.groups?.status ?? '';
-      dmarcResult.action = match?.groups?.action ?? '';
-      dmarcResult.headerFrom = match?.groups?.headerfrom ?? '';
-      continue;
+      if (match1) {
+        dmarcResult.status = match1?.groups?.status ?? '';
+        dmarcResult.action = match1?.groups?.action ?? '';
+        dmarcResult.headerFrom = match1?.groups?.headerfrom ?? '';
+        continue;
+      }
     }
 
     if (result.startsWith('compauth=')) {
+
+      compAuthResult = { 
+        showError: false
+      };
+
       const regex = /compauth=(?<status>[a-z]+)\sreason=(?<reason>[A-Za-z0-9 .]+)/;
       const match = result.match(regex);
 
@@ -118,7 +139,7 @@ const fullResult = computed<FullResult>(() => {
     }
   }
 
-  if (spfResult.status !== 'pass') {
+  if (spfResult && spfResult.status !== 'pass') {
     spfResult.showError = true;
   }
 
@@ -128,11 +149,11 @@ const fullResult = computed<FullResult>(() => {
     }
   }
 
-  if (dmarcResult.status !== 'pass') {
+  if (dmarcResult && dmarcResult.status !== 'pass') {
     dmarcResult.showError = true;
   }
 
-  if (compAuthResult.status !== 'pass') {
+  if (compAuthResult && compAuthResult.status !== 'pass') {
     compAuthResult.showError = true;
   }
 
@@ -147,13 +168,13 @@ const fullResult = computed<FullResult>(() => {
 
 <template>
   <div class="row q-col-gutter-sm">
-    <div class="col-12 col-lg-6">
+    <div class="col-12 col-lg-6" v-if="fullResult.spf">
       <q-card bordered flat>
         <q-card-section class="q-pa-sm">
           <q-icon v-if="fullResult.spf?.showError" name="warning" color="red" size="sm" /> SPF
         </q-card-section>
         <DataSection>
-          <template #name> Status </template
+          <template #name>Status</template
           ><template #value>
             {{ fullResult.spf?.status }}
           </template>
@@ -204,7 +225,7 @@ const fullResult = computed<FullResult>(() => {
       </q-card>
     </div>
 
-    <div class="col-12 col-lg-6">
+    <div class="col-12 col-lg-6" v-if="fullResult.dmarc">
       <q-card bordered flat>
         <q-card-section class="q-pa-sm">
           <q-icon v-if="fullResult.dmarc?.showError" name="warning" color="red" size="sm" /> DMARC
