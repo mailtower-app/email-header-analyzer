@@ -98,9 +98,10 @@ const fullResult = computed<FullResult>(() => {
       }
 
       //dmarc=pass action=none header.from=github.com;
+      //dmarc=pass action=none header.from=brz.gv.at
       //dmarc=skipped
       const regex =
-        /dmarc=(?<status>[a-z]+)(\saction=(?<action>[A-Za-z0-9 .]+))?(\sheader\.from=(?<headerfrom>[A-Za-z0-9-.]+))?/;
+        /dmarc=(?<status>[a-z]+)(\saction=(?<action>[A-Za-z0-9.]+))?(\sheader\.from=(?<headerfrom>[A-Za-z0-9-.]+))?/;
       const match = result.match(regex);
 
       if (match) {
