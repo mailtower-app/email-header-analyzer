@@ -139,7 +139,9 @@ function decodeBase64(encodedText: string, charset: string): string {
 }
 
 function decodeQuotedPrintable(encodedText: string, charset: string): string {
-  const decodedText = encodedText.replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => {
+  const temp = encodedText.replace(/_/g, ' ');
+
+  const decodedText = temp.replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => {
     return String.fromCharCode(parseInt(hex, 16));
   });
 
@@ -148,9 +150,19 @@ function decodeQuotedPrintable(encodedText: string, charset: string): string {
   );
 }
 
+/**
+ * Checks if a text contains a MIME encoded-word (RFC 2047).
+ * @param text The text to check
+ * @returns true if at least one encoded-word is found, false otherwise
+ */
+function hasMimeEncoding(text: string): boolean {
+  const mimeWordRegex = /=\?[^?]+\?[BQ]\?[^?]+\?=/i;
+  return mimeWordRegex.test(text);
+}
+
 function decodeMailHeader(mailHeader: string, headerIndex: number): HeaderDetails {
   const encodedMailHeader = mailHeader.replace(
-    /\s=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi,
+    /=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi,
     (_, charset, encoding, encodedText) => {
       if (encoding.toUpperCase() === 'B') {
         return decodeBase64(encodedText, charset);
@@ -188,9 +200,15 @@ function splitMailHeader(mailRaw: string): HeaderDetails[] | undefined {
       break;
     }
 
+    const withMimeEcoding = hasMimeEncoding(line);
+
     if (/^\s/.test(line)) {
       // Line is a continuation of the previous header field
-      currentLine += ' ' + line.trim();
+      if (withMimeEcoding) {
+        currentLine += line.trimStart();
+      } else {
+        currentLine += ' ' + line.trimStart();
+      }
     } else {
       // Line is a new header field
       if (currentLine) {

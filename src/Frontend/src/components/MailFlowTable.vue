@@ -100,6 +100,10 @@ const columns: QTableProps['columns'] = [
 ];
 
 function formatDate(date: Date): string {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+      return '';
+  }
+
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: '2-digit',
