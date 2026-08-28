@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import type { QTableProps } from 'quasar';
 
 import type { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts';
+import { formatUtc, formatDuration } from 'src/helpers/dateFormat';
 
 interface Props {
   receivedHeaders: ReceivedHeaderParts[];
@@ -10,28 +11,27 @@ interface Props {
 
 const myProps = defineProps<Props>();
 
-const delays = computed(() => {
-  const differences: (number | undefined)[] = [];
+function isValidDate(d: Date | undefined): d is Date {
+  return d instanceof Date && !Number.isNaN(d.getTime());
+}
 
-  differences.push(undefined);
+/** Seconds elapsed since the previous hop, or undefined when it can't be known. */
+const delays = computed<(number | undefined)[]>(() => {
+  return myProps.receivedHeaders.map((hop, i) => {
+    if (i === 0) return undefined;
 
-  for (let i = 1; i < myProps.receivedHeaders.length; i++) {
     const previousDate = myProps.receivedHeaders[i - 1]?.dateTime;
-    const currentDate = myProps.receivedHeaders[i]?.dateTime;
+    const currentDate = hop.dateTime;
 
-    if (!previousDate || !currentDate) {
-      differences.push(0);
-      continue;
-    }
+    if (!isValidDate(previousDate) || !isValidDate(currentDate)) return undefined;
 
-    const diffInMs = currentDate.getTime() - previousDate.getTime();
-    const diffInMinutes = diffInMs / 1000;
-
-    differences.push(diffInMinutes);
-  }
-
-  return differences;
+    return (currentDate.getTime() - previousDate.getTime()) / 1000;
+  });
 });
+
+function delayLabel(seconds: number | undefined): string {
+  return seconds === undefined ? '' : formatDuration(seconds);
+}
 
 const columns: QTableProps['columns'] = [
   {
@@ -99,23 +99,6 @@ const columns: QTableProps['columns'] = [
   },
 ];
 
-function formatDate(date: Date): string {
-  if (!(date instanceof Date) || isNaN(date.getTime())) {
-      return '';
-  }
-
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZone: 'UTC',
-  };
-
-  return new Intl.DateTimeFormat(undefined, options).format(date);
-}
 </script>
 
 <template>
@@ -130,7 +113,7 @@ function formatDate(date: Date): string {
   >
     <template #body-cell-dateTime="props">
       <q-td :props="props">
-        {{ formatDate(props.row.dateTime) }}
+        {{ formatUtc(props.row.dateTime) }}
       </q-td>
     </template>
     <template #body-cell-by="props">
@@ -152,9 +135,7 @@ function formatDate(date: Date): string {
     </template>
     <template #body-cell-delay="props">
       <q-td :props="props">
-        <template v-if="delays[props.rowIndex] !== undefined">
-          {{ delays[props.rowIndex]?.toFixed(1) }}s
-        </template>
+        {{ delayLabel(delays[props.rowIndex]) }}
       </q-td>
     </template>
   </q-table>

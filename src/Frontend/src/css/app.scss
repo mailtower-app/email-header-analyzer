@@ -1,4 +1,86 @@
 // app global css in SCSS form
+// -----------------------------------------------------------------------------
+// Design tokens for the "forensic console" language. Every component tints
+// through these custom properties — never a raw hex. Two themes: the light
+// set lives on :root, the dark set is applied by Quasar via `body.body--dark`
+// (framework.config.dark: 'auto' in quasar.config.ts).
+
+:root {
+  // Surfaces
+  --ground: #eef2f6; // cool paper — page ground
+  --panel: #ffffff; // cards
+  --panel-2: #f5f8fb; // insets, code blocks
+  --raised: #ffffff; // elevated (verdict bar)
+  --border: #d9e1e9;
+  --border-strong: #bcc9d5;
+
+  // Text
+  --ink: #16202b;
+  --ink-muted: #566472;
+  --ink-faint: #8493a1;
+
+  // Brand accent — interaction / "scan" only, never a verdict
+  --accent: #0e7490;
+  --accent-bg: #e2f1f5;
+  --accent-contrast: #ffffff;
+
+  // Semantic verdict states (paired text + tint background)
+  --pass: #047857;
+  --pass-bg: #e6f5ef;
+  --warn: #b45309;
+  --warn-bg: #fbf0df;
+  --fail: #d61f43;
+  --fail-bg: #fdeaee;
+  --info: #0369a1;
+  --info-bg: #e5f0fa;
+
+  // Scale
+  --shadow: 0 1px 2px rgba(16, 32, 43, 0.05), 0 14px 34px -16px rgba(16, 32, 43, 0.16);
+  --radius: 14px;
+  --radius-sm: 9px;
+
+  // Type roles
+  --font-sans:
+    'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  // Motion
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 140ms;
+  --dur-base: 320ms;
+}
+
+body.body--dark {
+  --ground: #0b0f14;
+  --panel: #111a23;
+  --panel-2: #0d151e;
+  --raised: #17222d;
+  --border: #233140;
+  --border-strong: #35485c;
+
+  --ink: #c9d4de;
+  --ink-muted: #8595a4;
+  --ink-faint: #5e6e7d;
+
+  --accent: #22d3ee;
+  --accent-bg: #0c2b33;
+  --accent-contrast: #04222a;
+
+  --pass: #34d399;
+  --pass-bg: #0f2a23;
+  --warn: #fbbf24;
+  --warn-bg: #2b2410;
+  --fail: #fb7185;
+  --fail-bg: #2c1620;
+  --info: #38bdf8;
+  --info-bg: #0b2434;
+
+  --shadow: 0 1px 0 rgba(0, 0, 0, 0.45), 0 22px 46px -24px rgba(0, 0, 0, 0.75);
+}
+
+// -----------------------------------------------------------------------------
+// Base
+// -----------------------------------------------------------------------------
 
 html {
   font-size: 16px;
@@ -10,17 +92,68 @@ body {
   padding: 0;
 }
 
+body {
+  font-family: var(--font-sans);
+  background: var(--ground);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+// Technical values render in the mono role.
+.text-mono,
+code,
+kbd,
+pre {
+  font-family: var(--font-mono);
+}
+
 h1 {
   font-size: clamp(2rem, -0.2rem + 4vw, 3rem) !important;
   line-height: clamp(2.2rem, -0.2rem + 4vw, 3.2rem) !important;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   margin-block-start: 0em;
   margin-block-end: 0.4em;
-  color: $secondary;
+  color: var(--ink);
 }
 
 h2 {
   font-size: 1.4rem;
   line-height: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   margin-block-end: 10px;
+  color: var(--ink);
+}
+
+// Entrance for result blocks — one short rise, never on re-render, off when
+// the viewer asks for reduced motion.
+@media (prefers-reduced-motion: no-preference) {
+  .rise-in {
+    animation: riseIn var(--dur-base) var(--ease-out) both;
+    animation-delay: var(--rise-delay, 0ms);
+  }
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+// Stopgap: components not yet migrated to tokens still use Quasar's fixed
+// light greys, which glow white in dark mode. Map them onto surface tokens
+// until those components are reworked in a later phase.
+body.body--dark {
+  .bg-grey-1,
+  .bg-grey-2 {
+    background: var(--panel-2) !important;
+    color: var(--ink) !important;
+  }
+
+  .bg-grey-3 {
+    background: var(--raised) !important;
+    color: var(--ink) !important;
+  }
 }

@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import type { QTableProps } from 'quasar';
 
 import type { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts';
 
 import { mailHelper } from 'src/helpers/mailHelper';
+import { analyzeMail, domainOf, sameOrg } from 'src/helpers/analysis';
+import type { AlignHint } from 'src/helpers/analysis';
 
 import LetterWithEnvelope from 'src/components/LetterWithEnvelope.vue';
 import MailHeaderDetailBox from 'src/components/MailHeaderDetailBox.vue';
-import MailFlow from 'src/components/MailFlow.vue';
+import MailTimeline from 'src/components/MailTimeline.vue';
 import MailFlowTable from 'src/components/MailFlowTable.vue';
+import VerdictBar from 'src/components/VerdictBar.vue';
+import FindingsPanel from 'src/components/FindingsPanel.vue';
+import SummaryCard from 'src/components/SummaryCard.vue';
+import HeadersTable from 'src/components/HeadersTable.vue';
 
 const MailHeaders = {
   From: 'From',
@@ -25,34 +30,6 @@ const MailHeaders = {
 };
 
 const mailHeader = ref<string>();
-const filter = ref<string | undefined>();
-
-const columns: QTableProps['columns'] = [
-  {
-    name: 'headerName',
-    align: 'left',
-    label: 'Name',
-    field: 'headerName',
-    sortable: false,
-    style: 'width: 300px',
-  },
-  {
-    name: 'headerData',
-    align: 'left',
-    label: 'Data',
-    field: 'headerData',
-    sortable: false,
-    classes: 'text-break',
-  },
-  {
-    name: 'headerIndex',
-    align: 'left',
-    label: 'Index',
-    field: 'headerIndex',
-    sortable: false,
-    style: 'width: 70px',
-  },
-];
 
 const mailHeaderParts = computed(() => {
   if (!mailHeader.value) {
@@ -166,19 +143,79 @@ const dkimSignatureHeaders = computed(() => {
 
 const otherHeaders = computed(() => {
   const ignoreHeaderNames = Object.values(MailHeaders);
-  const filteredHeaders = mailHeaderParts.value?.filter(
+  return mailHeaderParts.value?.filter(
     (header) => !ignoreHeaderNames.includes(header.headerName),
   );
+});
 
-  const filterTerm = filter.value?.toLowerCase();
-  if (filterTerm) {
-    return mailHeaderParts.value?.filter(
-      (header) =>
-        header.headerName.toLowerCase().includes(filterTerm) ||
-        header.headerData.toLowerCase().includes(filterTerm),
-    );
+function alignAgainstFrom(
+  value: string | undefined,
+  severity: AlignHint['severity'],
+  text: string,
+): AlignHint | undefined {
+  const other = domainOf(value);
+  const fromDomain = domainOf(from.value);
+  if (!other || !fromDomain || sameOrg(other, fromDomain)) return undefined;
+  return { severity, text };
+}
+
+const identityCards = computed(() => {
+  if (!mailHeaderParts.value) return [];
+
+  const cards: Array<{
+    key: string;
+    label: string;
+    value: string | undefined;
+    mono: boolean;
+    align?: AlignHint | undefined;
+  }> = [
+    {
+      key: 'return-path',
+      label: 'Return-Path',
+      value: returnPath.value,
+      mono: true,
+      align: alignAgainstFrom(returnPath.value, 'warn', 'differs from From'),
+    },
+    { key: 'from', label: 'From', value: from.value, mono: true },
+    { key: 'to', label: 'To', value: to.value, mono: true },
+    {
+      key: 'reply-to',
+      label: 'Reply-To',
+      value: replyToHeaders.value?.[0]?.headerData,
+      mono: true,
+      align: alignAgainstFrom(
+        replyToHeaders.value?.[0]?.headerData,
+        'warn',
+        'differs from From',
+      ),
+    },
+    {
+      key: 'message-id',
+      label: 'Message-ID',
+      value: messageIdHeaders.value?.[0]?.headerData,
+      mono: true,
+      align: alignAgainstFrom(
+        messageIdHeaders.value?.[0]?.headerData,
+        'info',
+        'third-party domain',
+      ),
+    },
+    { key: 'date', label: 'Date', value: dateHeaders.value?.[0]?.headerData, mono: true },
+    { key: 'subject', label: 'Subject', value: subject.value, mono: false },
+  ];
+
+  return cards.filter((card) => card.value);
+});
+
+const analysis = computed(() => {
+  if (!mailHeaderParts.value) {
+    return undefined;
   }
-  return filteredHeaders;
+
+  return analyzeMail({
+    headers: mailHeaderParts.value,
+    received: receivedHeaders.value,
+  });
 });
 </script>
 
@@ -199,67 +236,39 @@ const otherHeaders = computed(() => {
         <q-btn
           flat
           icon="close"
-          class="cursor-pointer full-width full-height bg-red text-white"
+          aria-label="Clear headers"
+          class="clear-btn full-width full-height"
           @click="mailHeader = undefined"
         />
       </div>
     </div>
 
-    <div v-if="mailHeader" class="row">
+    <VerdictBar v-if="analysis" :result="analysis" class="q-mt-md rise-in" />
+    <FindingsPanel
+      v-if="analysis"
+      :result="analysis"
+      class="q-mt-lg rise-in"
+      style="--rise-delay: 60ms"
+    />
+
+    <div v-if="mailHeader" class="row q-mt-lg rise-in" style="--rise-delay: 120ms">
       <div class="col-12 col-md-5">
         <LetterWithEnvelope :to="to" :from="from" :subject="subject" :return-path="returnPath" />
       </div>
-      <div class="col-12 col-md-7">
+      <div id="mail-authentication" class="col-12 col-md-7">
         <div class="q-my-lg">
-          <div class="q-gutter-xs">
-            <MailHeaderDetailBox
-              v-if="returnPathHeaders && returnPathHeaders.length > 0"
-              name="Return-Path"
-              :details="returnPathHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
+          <div class="summary-grid">
+            <SummaryCard
+              v-for="card in identityCards"
+              :key="card.key"
+              :label="card.label"
+              :value="card.value"
+              :mono="card.mono"
+              :align="card.align"
             />
-            <MailHeaderDetailBox
-              v-if="fromHeaders && fromHeaders.length > 0"
-              name="From"
-              :details="fromHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
+          </div>
 
-            <MailHeaderDetailBox
-              v-if="toHeaders && toHeaders.length > 0"
-              name="To"
-              :details="toHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
-            <MailHeaderDetailBox
-              v-if="replyToHeaders && replyToHeaders.length > 0"
-              name="Reply-To"
-              :details="replyToHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
-            <MailHeaderDetailBox
-              v-if="messageIdHeaders && messageIdHeaders.length > 0"
-              name="Message-Id"
-              :details="messageIdHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
-            <MailHeaderDetailBox
-              v-if="dateHeaders && dateHeaders.length > 0"
-              name="Date"
-              :details="dateHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
-            <MailHeaderDetailBox
-              v-if="subjectHeaders && subjectHeaders.length > 0"
-              name="Subject"
-              :details="subjectHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
+          <div class="q-gutter-xs q-mt-md">
             <MailHeaderDetailBox
               v-if="authenticationResultsHeaders && authenticationResultsHeaders.length > 0"
               name="Authentication-Results"
@@ -277,47 +286,35 @@ const otherHeaders = computed(() => {
         </div>
       </div>
     </div>
-    <div v-if="mailHeader">
-      <h2>Mail Hops</h2>
+    <div v-if="mailHeader" class="rise-in" style="--rise-delay: 180ms">
+      <h2 id="mail-hops">Mail Hops</h2>
       <div v-if="receivedHeaders" class="q-mt-sm">
-        <MailFlow :received-headers="receivedHeaders" />
-        <MailFlowTable :received-headers="receivedHeaders" />
+        <MailTimeline :received-headers="receivedHeaders" />
+        <MailFlowTable :received-headers="receivedHeaders" class="q-mt-md" />
       </div>
 
       <h2>Other Headers</h2>
-      <q-table
-        v-if="otherHeaders"
-        flat
-        bordered
-        wrap-cells
-        :rows-per-page-options="[0]"
-        :rows="otherHeaders"
-        :columns="columns"
-        class="full-width"
-        table-style="min-height: 400px;"
-      >
-        <template #top>
-          <q-input
-            v-model="filter"
-            outlined
-            dense
-            debounce="100"
-            placeholder="Search"
-            class="full-width"
-            :bg-color="filter ? 'grey-3' : ''"
-          >
-            <template #append>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-        </template>
-      </q-table>
+      <HeadersTable v-if="otherHeaders" :rows="otherHeaders" />
     </div>
   </q-page>
 </template>
 
 <style scoped>
-:deep(.text-break) {
-  word-break: break-all;
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.7rem;
+}
+
+.clear-btn {
+  background: var(--panel-2);
+  color: var(--ink-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.clear-btn:hover {
+  color: var(--fail);
+  border-color: color-mix(in srgb, var(--fail) 45%, transparent);
 }
 </style>

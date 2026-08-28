@@ -1,5 +1,5 @@
 <template>
-  <div class="fullscreen bg-black text-white text-center q-pa-md flex flex-center">
+  <div class="not-found fullscreen text-center q-pa-md flex flex-center">
     <div>
       <div style="font-size: 15vh; height: 18vh">404</div>
 
@@ -9,7 +9,7 @@
         class="q-mt-xl q-px-xl"
         outline
         unelevated
-        :to="{ name: 'home', params: { lang: 'de' } }"
+        :to="{ name: 'home' }"
         label="Go to Home"
         no-caps
       />
@@ -18,3 +18,10 @@
 </template>
 
 <script setup lang="ts"></script>
+
+<style scoped>
+.not-found {
+  background: var(--ground);
+  color: var(--ink);
+}
+</style>

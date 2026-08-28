@@ -1,25 +1,23 @@
 // Quasar SCSS (& Sass) Variables
 // --------------------------------------------------
-// To customize the look and feel of this app, you can override
-// the Sass/SCSS variables found in Quasar's source Sass/SCSS files.
+// Redesign — "forensic console" visual language.
+// The brand accent (cyan) is the interaction / "scan" colour and is
+// never used to express a verdict. Verdict colour is the fixed
+// semantic set below: positive / warning / negative / info.
 
-// Check documentation for full list of Quasar variables
+// Brand / interaction
+$primary: #0e7490; // cyan-700 — AA on the light "paper" ground
+$secondary: #16202b; // ink — headings, strong text
+$accent: #566472; // muted ink — captions, secondary UI
 
-// Your own variables (that are declared here) and Quasar's own
-// ones will be available out of the box in your .vue/.scss/.sass files
+// Dark theme grounds (blue-black, not Quasar's default #1d1d1d)
+$dark: #111a23; // dark surface / panels
+$dark-page: #0b0f14; // dark page ground
 
-// It's highly recommended to change the default colors
-// to match your app's branding.
-// Tip: Use the "Theme Builder" on Quasar's documentation website.
-
-$primary: #000000;
-$secondary: #2b3131;
-$accent: #616161;
-
-$dark: #1d1d1d;
-$dark-page: #121212;
-
-$positive: #21ba45;
-$negative: #c10015;
-$info: #31ccec;
-$warning: #f2c037;
+// Semantic verdict colours (light-theme values; the dark variants
+// live as CSS custom properties in app.scss). Quasar maps these to
+// pass / warn / fail / info throughout the components.
+$positive: #047857; // pass
+$negative: #d61f43; // fail
+$warning: #b45309; // warn
+$info: #0369a1; // info

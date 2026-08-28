@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import DataSection from './DataSection.vue';
+import type { Severity } from 'src/helpers/analysis';
+import AuthCheckCard from 'src/components/AuthCheckCard.vue';
+import type { AuthRow } from 'src/components/AuthCheckCard.vue';
 
 interface Props {
   detail: string;
@@ -42,13 +44,21 @@ interface FullResult {
   compAuth?: CompAuthResult | undefined;
 }
 
+interface AuthCard {
+  key: string;
+  kind: string;
+  status?: string | undefined;
+  severity: Severity;
+  rows: AuthRow[];
+}
+
 const props = defineProps<Props>();
 
 const splitAuthResults = (input: string): string[] => {
   return input
     .split(/;(?![^(]*\))/)
-    .map(x => x.trim())
-    .filter(x => x.length > 0);
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0);
 };
 
 const fullResult = computed<FullResult>(() => {
@@ -70,8 +80,8 @@ const fullResult = computed<FullResult>(() => {
         status: match?.groups?.status ?? '',
         details: match?.groups?.details ?? '',
         authenticationSource: match?.groups?.authenticationSource ?? '',
-        authenticationData: match?.groups?.authenticationData ?? ''
-      }
+        authenticationData: match?.groups?.authenticationData ?? '',
+      };
 
       continue;
     }
@@ -92,10 +102,9 @@ const fullResult = computed<FullResult>(() => {
     }
 
     if (result.startsWith('dmarc=')) {
-
       dmarcResult = {
-        showError: false
-      }
+        showError: false,
+      };
 
       //dmarc=pass action=none header.from=github.com;
       //dmarc=pass action=none header.from=brz.gv.at
@@ -126,9 +135,8 @@ const fullResult = computed<FullResult>(() => {
     }
 
     if (result.startsWith('compauth=')) {
-
-      compAuthResult = { 
-        showError: false
+      compAuthResult = {
+        showError: false,
       };
 
       const regex = /compauth=(?<status>[a-z]+)\sreason=(?<reason>[A-Za-z0-9 .]+)/;
@@ -165,114 +173,86 @@ const fullResult = computed<FullResult>(() => {
     compAuth: compAuthResult,
   };
 });
+
+const cards = computed<AuthCard[]>(() => {
+  const out: AuthCard[] = [];
+  const result = fullResult.value;
+
+  if (result.spf) {
+    out.push({
+      key: 'spf',
+      kind: 'SPF',
+      status: result.spf.status,
+      severity: result.spf.showError ? 'fail' : 'pass',
+      rows: [
+        { label: 'Details', value: result.spf.details },
+        {
+          label: result.spf.authenticationSource
+            ? `smtp.${result.spf.authenticationSource}`
+            : 'source',
+          value: result.spf.authenticationData,
+        },
+      ],
+    });
+  }
+
+  (result.dkims ?? []).forEach((dkim, index) => {
+    out.push({
+      key: `dkim-${index}`,
+      kind: 'DKIM',
+      status: dkim.status,
+      severity: dkim.showError ? 'fail' : 'pass',
+      rows: [
+        { label: 'Details', value: dkim.details },
+        { label: 'header.d', value: dkim.headerDomain },
+      ],
+    });
+  });
+
+  if (result.dmarc) {
+    out.push({
+      key: 'dmarc',
+      kind: 'DMARC',
+      status: result.dmarc.status,
+      severity: result.dmarc.showError ? 'fail' : 'pass',
+      rows: [
+        { label: 'Action', value: result.dmarc.action },
+        { label: 'header.from', value: result.dmarc.headerFrom },
+      ],
+    });
+  }
+
+  if (result.compAuth?.status) {
+    out.push({
+      key: 'compauth',
+      kind: 'CompAuth',
+      status: result.compAuth.status,
+      severity: result.compAuth.showError ? 'warn' : 'pass',
+      rows: [{ label: 'Reason', value: result.compAuth.reason }],
+    });
+  }
+
+  return out;
+});
 </script>
 
 <template>
-  <div class="row q-col-gutter-sm">
-    <div class="col-12 col-lg-6" v-if="fullResult.spf">
-      <q-card bordered flat>
-        <q-card-section class="q-pa-sm">
-          <q-icon v-if="fullResult.spf?.showError" name="warning" color="red" size="sm" /> SPF
-        </q-card-section>
-        <DataSection>
-          <template #name>Status</template
-          ><template #value>
-            {{ fullResult.spf?.status }}
-          </template>
-        </DataSection>
-        <DataSection>
-          <template #name> Details </template
-          ><template #value>
-            {{ fullResult.spf?.details }}
-          </template>
-        </DataSection>
-        <DataSection>
-          <template #name> Source: {{ fullResult.spf?.authenticationSource }} </template
-          ><template #value>
-            {{ fullResult.spf?.authenticationData }}
-          </template>
-        </DataSection>
-      </q-card>
-    </div>
-
-    <div
-      v-for="(dkimResult, index) in fullResult.dkims"
-      :key="`dkimResult${index}`"
-      class="col-12 col-lg-6"
-    >
-      <q-card bordered flat>
-        <q-card-section class="q-pa-sm">
-          <q-icon v-if="dkimResult?.showError" name="warning" color="red" size="sm" /> DKIM
-        </q-card-section>
-
-        <DataSection>
-          <template #name> Status </template
-          ><template #value>
-            {{ dkimResult?.status }}
-          </template>
-        </DataSection>
-        <DataSection>
-          <template #name> Details </template
-          ><template #value>
-            {{ dkimResult?.details }}
-          </template>
-        </DataSection>
-        <DataSection>
-          <template #name> HeaderDomain </template
-          ><template #value>
-            {{ dkimResult?.headerDomain }}
-          </template>
-        </DataSection>
-      </q-card>
-    </div>
-
-    <div class="col-12 col-lg-6" v-if="fullResult.dmarc">
-      <q-card bordered flat>
-        <q-card-section class="q-pa-sm">
-          <q-icon v-if="fullResult.dmarc?.showError" name="warning" color="red" size="sm" /> DMARC
-        </q-card-section>
-
-        <DataSection>
-          <template #name> Status </template
-          ><template #value>
-            {{ fullResult.dmarc?.status }}
-          </template>
-        </DataSection>
-        <DataSection>
-          <template #name> Action </template
-          ><template #value>
-            {{ fullResult.dmarc?.action }}
-          </template>
-        </DataSection>
-        <DataSection>
-          <template #name> HeaderFrom </template
-          ><template #value>
-            {{ fullResult.dmarc?.headerFrom }}
-          </template>
-        </DataSection>
-      </q-card>
-    </div>
-
-    <div v-if="fullResult.compAuth?.status" class="col-12 col-lg-6">
-      <q-card bordered flat>
-        <q-card-section class="q-pa-sm">
-          <q-icon v-if="fullResult.compAuth?.showError" name="warning" color="red" size="sm" />
-          CompAuth
-        </q-card-section>
-
-        <DataSection>
-          <template #name> Status </template
-          ><template #value>
-            {{ fullResult.compAuth?.status }}
-          </template>
-        </DataSection>
-        <DataSection>
-          <template #name> Reason </template
-          ><template #value>
-            {{ fullResult.compAuth?.reason }}
-          </template>
-        </DataSection>
-      </q-card>
-    </div>
+  <div class="auth-grid">
+    <AuthCheckCard
+      v-for="card in cards"
+      :key="card.key"
+      :kind="card.kind"
+      :status="card.status"
+      :severity="card.severity"
+      :rows="card.rows"
+    />
   </div>
 </template>
+
+<style scoped>
+.auth-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+</style>
