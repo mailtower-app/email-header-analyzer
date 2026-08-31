@@ -9,7 +9,7 @@
         class="q-mt-xl q-px-xl"
         outline
         unelevated
-        :to="{ name: 'home', params: { lang: 'de' } }"
+        :to="{ name: 'home' }"
         label="Go to Home"
         no-caps
       />

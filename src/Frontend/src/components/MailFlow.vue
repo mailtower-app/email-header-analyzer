@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useQuasar } from 'quasar';
 
-import type { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts';
+import type { ReceivedHeaderParts } from '@/models/ReceivedHeaderParts';
 
 interface Props {
   receivedHeaders: ReceivedHeaderParts[];

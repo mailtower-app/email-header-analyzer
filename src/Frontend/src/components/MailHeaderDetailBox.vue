@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import HeaderVisualizationAuthenticationResults from 'src/components/HeaderVisualization/HeaderVisualizationAuthenticationResults.vue';
+import HeaderVisualizationAuthenticationResults from '@/components/HeaderVisualization/HeaderVisualizationAuthenticationResults.vue';
 
 interface Props {
   name: string;

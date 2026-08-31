@@ -3,17 +3,17 @@ import type { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
+    component: () => import('@/layouts/MainLayout.vue'),
     children: [
       {
         name: 'home',
         path: '',
-        component: () => import('pages/IndexPage.vue'),
+        component: () => import('@/pages/IndexPage.vue'),
       },
       {
         name: 'analyzer',
         path: 'header-analyzer',
-        component: () => import('pages/AnalyzerPage.vue'),
+        component: () => import('@/pages/AnalyzerPage.vue'),
       },
     ],
   },
@@ -22,7 +22,7 @@ const routes: RouteRecordRaw[] = [
   // but you can also remove it
   {
     path: '/:catchAll(.*)*',
-    component: () => import('pages/ErrorNotFound.vue'),
+    component: () => import('@/pages/ErrorNotFound.vue'),
   },
 ];
 

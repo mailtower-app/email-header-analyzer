@@ -1,43 +1,41 @@
 {
   "name": "email-header-analyzer",
   "version": "0.0.1",
+  "private": true,
   "description": "Mail Header Analyzer",
-  "productName": "MAILTOWER E-Mail Header Analyzer",
+  "keywords": [
+    "quasar",
+    "quasar-app",
+    "quasar-app-vite",
+    "quasar-cli",
+    "vite",
+    "vue",
+    "vuejs"
+  ],
   "author": "Tino Hager <tino.hager@nager.at>",
   "type": "module",
-  "private": true,
   "scripts": {
-    "lint": "eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\"",
-    "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
-    "test": "echo \"No test specified\" && exit 0",
+    "lint": "oxfmt && oxlint --fix",
+    "lint:check": "oxfmt --check && oxlint",
     "dev": "quasar dev",
     "build": "quasar build",
-    "postinstall": "quasar prepare"
+    "postinstall": "quasar prepare --silent"
   },
   "dependencies": {
-    "@quasar/extras": "^1.17.0",
-    "quasar": "^2.18.6",
-    "vue": "^3.4.18",
-    "vue-router": "^4.0.12"
+    "@quasar/extras": "^2.0.4",
+    "quasar": "^2.27.0",
+    "vue": "^3.5.22",
+    "vue-router": "^5.0.6"
   },
   "devDependencies": {
-    "@eslint/js": "^9.14.0",
-    "@quasar/app-vite": "^2.4.0",
-    "@types/node": "^20.5.9",
-    "@vue/eslint-config-prettier": "^10.1.0",
-    "@vue/eslint-config-typescript": "^14.4.0",
-    "autoprefixer": "^10.4.2",
-    "eslint": "^9.14.0",
-    "eslint-plugin-vue": "^9.30.0",
-    "globals": "^15.12.0",
-    "prettier": "^3.3.3",
-    "typescript": "^5.9.3",
-    "vite-plugin-checker": "^0.12.0",
-    "vue-tsc": "^3.1.8"
+    "@quasar/app-vite": "^3.8.1",
+    "autoprefixer": "^10.4.27",
+    "oxfmt": "^0.x",
+    "oxlint": "^1.x",
+    "postcss": "^8.5.8"
   },
   "engines": {
-    "node": "^28 || ^26 || ^24 || ^22 || ^20 || ^18",
-    "npm": ">= 6.13.4",
-    "yarn": ">= 1.21.1"
-  }
+    "node": ">= 26 || ^24 || ^22.12"
+  },
+  "productName": "MAILTOWER E-Mail Header Analyzer"
 }

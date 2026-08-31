@@ -2,14 +2,14 @@
 import { ref, computed } from 'vue';
 import type { QTableProps } from 'quasar';
 
-import type { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts';
+import type { ReceivedHeaderParts } from '@/models/ReceivedHeaderParts';
 
-import { mailHelper } from 'src/helpers/mailHelper';
+import { mailHelper } from '@/helpers/mailHelper';
 
-import LetterWithEnvelope from 'src/components/LetterWithEnvelope.vue';
-import MailHeaderDetailBox from 'src/components/MailHeaderDetailBox.vue';
-import MailFlow from 'src/components/MailFlow.vue';
-import MailFlowTable from 'src/components/MailFlowTable.vue';
+import LetterWithEnvelope from '@/components/LetterWithEnvelope.vue';
+import MailHeaderDetailBox from '@/components/MailHeaderDetailBox.vue';
+import MailFlow from '@/components/MailFlow.vue';
+import MailFlowTable from '@/components/MailFlowTable.vue';
 
 const MailHeaders = {
   From: 'From',

@@ -1,5 +1,5 @@
-import type { HeaderDetails } from 'src/models/HeaderDetails';
-import type { ReceivedHeaderParts } from 'src/models/ReceivedHeaderParts';
+import type { HeaderDetails } from '@/src/models/HeaderDetails';
+import type { ReceivedHeaderParts } from '@/src/models/ReceivedHeaderParts';
 
 function splitMailHeaderDomainIpAddress(receiveHeader: string): string[] {
   const indexOfOpeningRoundClamp = receiveHeader.indexOf('(');
