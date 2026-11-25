@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="420" viewBox="0 0 880 420" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Gmail: open the email header via “Show original”</title>
+  <rect width="880" height="420" rx="14" fill="#f6f8fa"/>
+  <!-- Fenster 1 -->
+  <g transform="translate(24,24)">
+    <rect width="400" height="372" rx="10" fill="#fff" stroke="#d0d7de"/>
+    <rect width="400" height="34" rx="10" fill="#eef1f4"/><rect y="24" width="400" height="10" fill="#eef1f4"/>
+    <circle cx="18" cy="17" r="5" fill="#ff5f57"/><circle cx="34" cy="17" r="5" fill="#febc2e"/><circle cx="50" cy="17" r="5" fill="#28c840"/>
+    <text x="200" y="22" text-anchor="middle" font-size="13" fill="#57606a">Gmail – opened email</text>
+    <text x="20" y="66" font-size="16" font-weight="600" fill="#1f2328">Your invoice is ready</text>
+    <circle cx="36" cy="100" r="14" fill="#c8d6f0"/>
+    <text x="58" y="96" font-size="13" font-weight="600" fill="#1f2328">Sender</text>
+    <text x="58" y="113" font-size="12" fill="#57606a">to me</text>
+    <!-- Icons rechts -->
+    <text x="300" y="104" font-size="18" fill="#57606a">☆</text>
+    <text x="326" y="104" font-size="18" fill="#57606a">↩</text>
+    <rect x="350" y="84" width="30" height="30" rx="15" fill="#fff4d6" stroke="#d4a017" stroke-width="2"/>
+    <text x="365" y="105" text-anchor="middle" font-size="18" font-weight="700" fill="#1f2328">⋮</text>
+    <circle cx="380" cy="80" r="11" fill="#d93025"/><text x="380" y="85" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">1</text>
+    <rect x="20" y="140" width="300" height="10" rx="5" fill="#eaeef2"/>
+    <rect x="20" y="160" width="340" height="10" rx="5" fill="#eaeef2"/>
+    <rect x="20" y="180" width="260" height="10" rx="5" fill="#eaeef2"/>
+    <!-- Dropdown -->
+    <rect x="170" y="200" width="214" height="160" rx="8" fill="#fff" stroke="#d0d7de"/>
+    <text x="186" y="226" font-size="13" fill="#57606a">Reply</text>
+    <text x="186" y="252" font-size="13" fill="#57606a">Forward</text>
+    <text x="186" y="278" font-size="13" fill="#57606a">Print</text>
+    <rect x="174" y="292" width="206" height="30" rx="5" fill="#fff4d6" stroke="#d4a017" stroke-width="2"/>
+    <text x="186" y="312" font-size="13" font-weight="700" fill="#1f2328">Show original</text>
+    <circle cx="380" cy="292" r="11" fill="#d93025"/><text x="380" y="297" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">2</text>
+    <text x="186" y="344" font-size="13" fill="#57606a">Report spam</text>
+  </g>
+  <!-- Pfeil -->
+  <path d="M434 210 h22" stroke="#57606a" stroke-width="3"/><path d="M456 202 l10 8 l-10 8 z" fill="#57606a"/>
+  <!-- Fenster 2 -->
+  <g transform="translate(476,24)">
+    <rect width="380" height="372" rx="10" fill="#fff" stroke="#d0d7de"/>
+    <rect width="380" height="34" rx="10" fill="#eef1f4"/><rect y="24" width="380" height="10" fill="#eef1f4"/>
+    <text x="190" y="22" text-anchor="middle" font-size="13" fill="#57606a">New tab: Original message</text>
+    <text x="20" y="64" font-size="12" fill="#57606a">SPF: <tspan fill="#1a7f37" font-weight="600">PASS</tspan></text><text x="110" y="64" font-size="12" fill="#57606a">DKIM: <tspan fill="#1a7f37" font-weight="600">PASS</tspan></text><text x="210" y="64" font-size="12" fill="#57606a">DMARC: <tspan fill="#1a7f37" font-weight="600">PASS</tspan></text>
+    <rect x="20" y="80" width="190" height="32" rx="6" fill="#fff4d6" stroke="#d4a017" stroke-width="2"/>
+    <text x="115" y="101" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2328">Copy to clipboard</text>
+    <circle cx="210" cy="80" r="11" fill="#d93025"/><text x="210" y="85" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">3</text>
+    <rect x="20" y="126" width="340" height="226" rx="6" fill="#f6f8fa" stroke="#d0d7de"/>
+    <g font-family="Consolas, Menlo, monospace" font-size="11.5" fill="#1f2328">
+      <text x="32" y="150"><tspan fill="#0550ae">Delivered-To:</tspan> you@gmail.com</text>
+      <text x="32" y="172"><tspan fill="#0550ae">Received:</tspan> from mail.example.com</text>
+      <text x="32" y="190">    by mx.google.com with ESMTPS</text>
+      <text x="32" y="212"><tspan fill="#0550ae">Authentication-Results:</tspan> …</text>
+      <text x="32" y="234"><tspan fill="#0550ae">Return-Path:</tspan> &lt;info@example.com&gt;</text>
+      <text x="32" y="256"><tspan fill="#0550ae">From:</tspan> Sender &lt;info@…&gt;</text>
+      <text x="32" y="278"><tspan fill="#0550ae">Subject:</tspan> Your invoice is ready</text>
+      <text x="32" y="300"><tspan fill="#0550ae">Date:</tspan> Tue, 24 Nov 2026 09:12</text>
+      <text x="32" y="330" fill="#57606a">…</text>
+    </g>
+  </g>
+</svg>

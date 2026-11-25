@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="200" viewBox="0 0 880 200" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Ablauf: Header kopieren, im Analyzer einfügen, Ergebnis ansehen</title>
+  <rect width="880" height="200" rx="14" fill="#f6f8fa"/>
+  <g font-size="14" fill="#1f2328" text-anchor="middle">
+    <!-- 1 -->
+    <rect x="24" y="30" width="236" height="140" rx="12" fill="#fff" stroke="#d0d7de"/>
+    <circle cx="142" cy="70" r="22" fill="#e8f0fe"/>
+    <rect x="128" y="58" width="28" height="22" rx="3" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+    <path d="M128 60 l14 11 l14 -11" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+    <text x="142" y="118" font-weight="700">1. Header kopieren</text>
+    <text x="142" y="142" font-size="12.5" fill="#57606a">in Gmail oder Outlook</text>
+    <!-- Pfeil -->
+    <path d="M268 100 h22" stroke="#57606a" stroke-width="3"/><path d="M290 92 l10 8 l-10 8 z" fill="#57606a"/>
+    <!-- 2 -->
+    <rect x="322" y="30" width="236" height="140" rx="12" fill="#fff" stroke="#d0d7de"/>
+    <circle cx="440" cy="70" r="22" fill="#e8f0fe"/>
+    <rect x="429" y="56" width="22" height="28" rx="3" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+    <rect x="434" y="52" width="12" height="7" rx="2" fill="#2563eb"/>
+    <text x="440" y="118" font-weight="700">2. Einfügen</text>
+    <text x="440" y="142" font-size="12.5" fill="#57606a">ins Eingabefeld (Strg+V / ⌘+V)</text>
+    <path d="M566 100 h22" stroke="#57606a" stroke-width="3"/><path d="M588 92 l10 8 l-10 8 z" fill="#57606a"/>
+    <!-- 3 -->
+    <rect x="620" y="30" width="236" height="140" rx="12" fill="#fff" stroke="#d0d7de"/>
+    <circle cx="738" cy="70" r="22" fill="#e8f0fe"/>
+    <circle cx="724" cy="70" r="4" fill="#2563eb"/><circle cx="738" cy="62" r="4" fill="#2563eb"/><circle cx="752" cy="74" r="4" fill="#2563eb"/>
+    <path d="M724 70 L738 62 L752 74" fill="none" stroke="#2563eb" stroke-width="2"/>
+    <text x="738" y="118" font-weight="700">3. Analyse ansehen</text>
+    <text x="738" y="142" font-size="12.5" fill="#57606a">Server-Route, Zeiten, SPF/DKIM</text>
+  </g>
+</svg>

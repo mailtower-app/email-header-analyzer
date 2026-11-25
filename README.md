@@ -50,6 +50,13 @@ No installation or account is required.
 
 👉 **[Open the Email Header Analyzer](https://mailheader.mailtower.app)**
 
+## 📥 How to Get the Email Header
+
+Not sure where to find the header of an email? Illustrated step-by-step guides for **Gmail**, **Microsoft 365** and **Outlook.com**:
+
+* 🇬🇧 [How to get the email header (English)](docs/get-email-headers.md)
+* 🇩🇪 [So findest du die E-Mail-Header (Deutsch)](docs/get-email-headers.de.md)
+
 ## 🤝 Contributing
 
 Contributions are welcome!
