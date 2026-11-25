@@ -1,27 +1,104 @@
-import type { HeaderDetails } from '@/src/models/HeaderDetails';
-import type { ReceivedHeaderParts } from '@/src/models/ReceivedHeaderParts';
+import type { HeaderDetails } from '@/models/HeaderDetails';
+import type { ReceivedHeaderParts } from '@/models/ReceivedHeaderParts';
 
-function splitMailHeaderDomainIpAddress(receiveHeader: string): string[] {
-  const indexOfOpeningRoundClamp = receiveHeader.indexOf('(');
-  if (indexOfOpeningRoundClamp === -1) {
-    return [receiveHeader];
+type ReceivedClause = 'from' | 'by' | 'via' | 'with' | 'id' | 'for';
+
+const receivedClauseRegex = /(from|by|via|with|id|for)\s/iy;
+const ipAddressRegex = /^(?:\d{1,3}(?:\.\d{1,3}){3}|[0-9a-f]*:[0-9a-f:.]+)$/i;
+const headerLineRegex = /^[\x21-\x39\x3b-\x7e]+[ \t]*:/;
+
+/**
+ * Splits the value of a "from" or "by" clause into the host name and the ip address.
+ * Supports `host (name [1.2.3.4])`, `host (1.2.3.4)` and `[1.2.3.4]`.
+ */
+function splitHostAndIpAddress(clauseValue: string): {
+  host: string;
+  ipAddress?: string;
+} {
+  const indexOfOpeningRoundBracket = clauseValue.indexOf('(');
+  const host = (
+    indexOfOpeningRoundBracket === -1
+      ? clauseValue
+      : clauseValue.slice(0, indexOfOpeningRoundBracket)
+  ).trim();
+  const comment =
+    indexOfOpeningRoundBracket === -1 ? '' : clauseValue.slice(indexOfOpeningRoundBracket);
+
+  // Prefer the address the receiving server has seen, it is inside the comment
+  const bracketMatch = comment.match(/\[([^\]]+)\]/) ?? host.match(/\[([^\]]+)\]/);
+  if (bracketMatch?.[1]) {
+    return { host, ipAddress: bracketMatch[1].replace(/^IPv6:/i, '').trim() };
   }
 
-  const hostname = receiveHeader.slice(0, indexOfOpeningRoundClamp).trim();
-  const ipAddress = receiveHeader
-    .slice(indexOfOpeningRoundClamp + 1, receiveHeader.indexOf(')'))
-    .trim();
+  const commentContent = comment.match(/^\(([^)]*)\)/)?.[1]?.trim();
+  if (commentContent && ipAddressRegex.test(commentContent)) {
+    return { host, ipAddress: commentContent };
+  }
 
-  return [hostname, ipAddress];
+  return { host };
+}
+
+/**
+ * Finds the clauses (from, by, via, with, id, for) of a received header.
+ * Keywords inside of comments `(...)` or angle brackets `<...>` are ignored.
+ */
+function splitReceivedClauses(text: string): Partial<Record<ReceivedClause, string>> {
+  const positions: {
+    clause: ReceivedClause;
+    start: number;
+    dataStart: number;
+  }[] = [];
+  let depth = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (char === '(' || char === '<') {
+      depth++;
+      continue;
+    }
+
+    if (char === ')' || char === '>') {
+      depth = Math.max(0, depth - 1);
+      continue;
+    }
+
+    const isWordStart = i === 0 || /\s/.test(text[i - 1] ?? '');
+    if (depth !== 0 || !isWordStart) {
+      continue;
+    }
+
+    receivedClauseRegex.lastIndex = i;
+    const match = receivedClauseRegex.exec(text);
+    if (!match?.[1]) {
+      continue;
+    }
+
+    const clause = match[1].toLowerCase() as ReceivedClause;
+    if (positions.some((position) => position.clause === clause)) {
+      continue;
+    }
+
+    positions.push({ clause, start: i, dataStart: i + match[0].length });
+    i += match[0].length - 1;
+  }
+
+  const clauses: Partial<Record<ReceivedClause, string>> = {};
+  positions.forEach((position, index) => {
+    const end = positions[index + 1]?.start ?? text.length;
+    clauses[position.clause] = text.slice(position.dataStart, end).trim();
+  });
+
+  return clauses;
+}
+
+function parseHeaderDate(text: string): Date | undefined {
+  // Remove comments like "(UTC)", not every browser can parse them
+  const date = new Date(text.replace(/\([^)]*\)/g, ' ').trim());
+  return isNaN(date.getTime()) ? undefined : date;
 }
 
 function parseReceivedHeader(headerDetails: HeaderDetails): ReceivedHeaderParts {
-  const textPartFrom = 'from';
-  const textPartBy = 'by';
-  const textPartWith = 'with';
-  const textPartId = 'id';
-  const textPartVia = 'via';
-
   const result: ReceivedHeaderParts = {
     rawHeaderDetails: headerDetails,
   };
@@ -30,153 +107,98 @@ function parseReceivedHeader(headerDetails: HeaderDetails): ReceivedHeaderParts 
     return result;
   }
 
-  let tempHeader = headerDetails.headerData;
+  let clauseText = headerDetails.headerData;
 
   // Extract Date at the end
-
-  const indexOfSemilicon = headerDetails.headerData.lastIndexOf(';');
-  if (indexOfSemilicon !== -1) {
-    const tempDate = headerDetails.headerData.slice(indexOfSemilicon + 1).trim();
-    result.dateTime = new Date(tempDate);
-    tempHeader = headerDetails.headerData.slice(0, indexOfSemilicon);
+  const indexOfSemicolon = clauseText.lastIndexOf(';');
+  if (indexOfSemicolon !== -1) {
+    const dateTime = parseHeaderDate(clauseText.slice(indexOfSemicolon + 1));
+    if (dateTime) {
+      result.dateTime = dateTime;
+      clauseText = clauseText.slice(0, indexOfSemicolon);
+    }
   }
 
-  // Section - from
+  const clauses = splitReceivedClauses(clauseText);
 
-  const startIndexFrom = tempHeader.indexOf(`${textPartFrom} `);
-
-  let dataStartIndexFrom = 0;
-  if (startIndexFrom >= 0) {
-    dataStartIndexFrom = startIndexFrom + textPartFrom.length + 1;
+  if (clauses.from !== undefined) {
+    const fromParts = splitHostAndIpAddress(clauses.from);
+    result.fromDomain = fromParts.host;
+    result.fromIpAddress = fromParts.ipAddress ?? '';
   }
 
-  // Section - by
-
-  const startIndexBy = tempHeader.indexOf(`${textPartBy} `, dataStartIndexFrom);
-  if (startIndexBy === -1) {
-    return result;
+  if (clauses.by !== undefined) {
+    const byParts = splitHostAndIpAddress(clauses.by);
+    result.byDomain = byParts.host;
+    result.byIpAddress = byParts.ipAddress ?? '';
   }
 
-  if (startIndexFrom !== -1) {
-    const tempFrom = tempHeader.slice(dataStartIndexFrom, startIndexBy - 1);
-    const fromParts = splitMailHeaderDomainIpAddress(tempFrom);
-
-    result.fromDomain = fromParts[0] ?? '';
-    result.fromIpAddress = fromParts[1] ?? '';
+  if (clauses.via) {
+    result.via = clauses.via;
   }
-
-  const dataStartIndexBy = startIndexBy + textPartBy.length + 1;
-
-  // Section - with
-
-  const startIndexWith = tempHeader.indexOf(`${textPartWith} `, dataStartIndexBy);
-  if (startIndexWith === -1) {
-    return result;
+  if (clauses.with) {
+    result.with = clauses.with;
   }
-
-  const tempBy = tempHeader.slice(dataStartIndexBy, startIndexWith - 1);
-  const byParts = splitMailHeaderDomainIpAddress(tempBy);
-
-  result.byDomain = byParts[0] ?? '';
-  result.byIpAddress = byParts[1] ?? '';
-
-  const dataStartIndexWith = startIndexWith + textPartWith.length + 1;
-  let dataEndIndexWith = tempHeader.length;
-
-  // Prepare for optional
-
-  let startIndexNextSearch = dataStartIndexWith;
-
-  // Section - id
-
-  const startIndexId = tempHeader.indexOf(`${textPartId} `, startIndexNextSearch);
-  let dataStartIndexId = 0;
-  let dataEndIndexId = 0;
-  if (startIndexId !== -1) {
-    dataStartIndexId = startIndexId + textPartId.length + 1;
-    startIndexNextSearch = dataStartIndexId;
-
-    dataEndIndexWith = startIndexId - 1;
+  if (clauses.id) {
+    result.id = clauses.id;
   }
-
-  // Section - via
-
-  const startIndexVia = tempHeader.indexOf(`${textPartVia} `, startIndexNextSearch);
-  let dataStartIndexVia = 0;
-  let dataEndIndexVia = 0;
-  if (startIndexVia !== -1) {
-    dataStartIndexVia = startIndexVia + textPartVia.length + 1;
-
-    startIndexNextSearch = dataStartIndexVia;
-
-    dataEndIndexId = startIndexVia - 1;
-
-    dataEndIndexVia = tempHeader.length;
-  } else {
-    dataEndIndexId = tempHeader.length;
-  }
-
-  // Extract data
-
-  if (dataStartIndexWith > 0) {
-    result.with = tempHeader.slice(dataStartIndexWith, dataEndIndexWith);
-  }
-  if (dataStartIndexId > 0) {
-    result.id = tempHeader.slice(dataStartIndexId, dataEndIndexId);
-  }
-  if (dataStartIndexVia > 0) {
-    result.via = tempHeader.slice(dataStartIndexVia, dataEndIndexVia);
+  if (clauses.for) {
+    result.for = clauses.for;
   }
 
   return result;
 }
 
-function decodeBase64(encodedText: string, charset: string): string {
-  const decodedText = atob(encodedText);
+function decodeBytes(binaryText: string, charset: string): string {
   return new TextDecoder(charset).decode(
-    new Uint8Array([...decodedText].map((char) => char.charCodeAt(0))),
+    new Uint8Array([...binaryText].map((char) => char.charCodeAt(0))),
   );
+}
+
+function decodeBase64(encodedText: string, charset: string): string {
+  return decodeBytes(atob(encodedText), charset);
 }
 
 function decodeQuotedPrintable(encodedText: string, charset: string): string {
-  const temp = encodedText.replace(/_/g, ' ');
+  const binaryText = encodedText
+    .replace(/_/g, ' ')
+    .replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 
-  const decodedText = temp.replace(/=([A-Fa-f0-9]{2})/g, (_, hex) => {
-    return String.fromCharCode(parseInt(hex, 16));
-  });
-
-  return new TextDecoder(charset).decode(
-    new Uint8Array([...decodedText].map((char) => char.charCodeAt(0))),
-  );
+  return decodeBytes(binaryText, charset);
 }
 
 /**
- * Checks if a text contains a MIME encoded-word (RFC 2047).
- * @param text The text to check
- * @returns true if at least one encoded-word is found, false otherwise
+ * Decodes all MIME encoded-words (RFC 2047) of a text.
+ * An encoded-word that cannot be decoded (unknown charset, invalid data) is kept unchanged.
  */
-function hasMimeEncoding(text: string): boolean {
-  const mimeWordRegex = /=\?[^?]+\?[BQ]\?[^?]+\?=/i;
-  return mimeWordRegex.test(text);
+function decodeMimeWords(text: string): string {
+  return (
+    text
+      // Whitespace between two encoded-words is not part of the text
+      .replace(/(=\?[^?\s]+\?[BQ]\?[^?\s]*\?=)\s+(?==\?[^?\s]+\?[BQ]\?)/gi, '$1')
+      .replace(
+        /=\?([^?\s]+)\?([BQ])\?([^?\s]*)\?=/gi,
+        (encodedWord, charset: string, encoding: string, encodedText: string) => {
+          // The charset can contain a language, for example "utf-8*en"
+          const charsetName = charset.split('*')[0] ?? charset;
+
+          try {
+            return encoding.toUpperCase() === 'B'
+              ? decodeBase64(encodedText, charsetName)
+              : decodeQuotedPrintable(encodedText, charsetName);
+          } catch {
+            return encodedWord;
+          }
+        },
+      )
+  );
 }
 
 function decodeMailHeader(mailHeader: string, headerIndex: number): HeaderDetails {
-  const encodedMailHeader = mailHeader.replace(
-    /=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi,
-    (_, charset, encoding, encodedText) => {
-      if (encoding.toUpperCase() === 'B') {
-        return decodeBase64(encodedText, charset);
-      } else if (encoding.toUpperCase() === 'Q') {
-        return decodeQuotedPrintable(encodedText, charset).trim();
-      }
-      return mailHeader;
-    },
-  );
+  const indexOfFirstColon = mailHeader.indexOf(':');
 
-  const indexOfFirstColon = encodedMailHeader.indexOf(':');
-
-  const headerName = encodedMailHeader.slice(0, indexOfFirstColon).trim();
-  const headerData = encodedMailHeader.slice(indexOfFirstColon + 1).trim();
+  const headerName = mailHeader.slice(0, indexOfFirstColon).trim();
+  const headerData = decodeMimeWords(mailHeader.slice(indexOfFirstColon + 1).trim());
 
   return {
     headerName,
@@ -185,51 +207,127 @@ function decodeMailHeader(mailHeader: string, headerIndex: number): HeaderDetail
   };
 }
 
-function splitMailHeader(mailRaw: string): HeaderDetails[] | undefined {
-  const lines = mailRaw.split(/\r?\n/);
-  if (!lines) {
-    return undefined;
-  }
+function splitMailHeader(mailRaw: string): HeaderDetails[] {
+  // Empty lines at the beginning are a copy and paste leftover
+  const lines = mailRaw.replace(/^(?:[ \t]*\r?\n)+/, '').split(/\r?\n/);
 
-  const formattedHeader = [];
+  const formattedHeader: HeaderDetails[] = [];
   let currentLine = '';
-  let headerIndex = 0;
+
+  const pushCurrentLine = () => {
+    if (currentLine) {
+      formattedHeader.push(decodeMailHeader(currentLine, formattedHeader.length));
+    }
+    currentLine = '';
+  };
 
   for (const line of lines) {
     if (!line) {
+      // An empty line marks the end of the header
       break;
     }
 
-    const withMimeEcoding = hasMimeEncoding(line);
-
     if (/^\s/.test(line)) {
       // Line is a continuation of the previous header field
-      if (withMimeEcoding) {
-        currentLine += line.trimStart();
-      } else {
-        currentLine += ' ' + line.trimStart();
-      }
-    } else {
-      // Line is a new header field
       if (currentLine) {
-        formattedHeader.push(decodeMailHeader(currentLine, headerIndex));
-        headerIndex++;
+        currentLine += ' ' + line.trim();
       }
+      continue;
+    }
 
+    if (headerLineRegex.test(line)) {
+      // Line is a new header field
+      pushCurrentLine();
       currentLine = line;
+      continue;
+    }
+
+    // Line is no header field, for example "Microsoft Mail Internet Headers Version 2.0"
+    // or a continuation line that lost the indentation
+    if (currentLine) {
+      currentLine += ' ' + line.trim();
     }
   }
 
   // Push the last accumulated line
-  if (currentLine) {
-    formattedHeader.push(decodeMailHeader(currentLine, headerIndex));
-  }
+  pushCurrentLine();
 
-  // Join the formatted header lines with new lines
   return formattedHeader;
 }
 
+/**
+ * Returns all headers with the given name, header names are case-insensitive (RFC 5322).
+ */
+function filterHeaders(headers: HeaderDetails[] | undefined, headerName: string): HeaderDetails[] {
+  const lowerCaseHeaderName = headerName.toLowerCase();
+  return (headers ?? []).filter(
+    (header) => header.headerName.toLowerCase() === lowerCaseHeaderName,
+  );
+}
+
+export interface MailAddress {
+  /** The display name, for example "Example Billing" */
+  name?: string;
+  /** The mail address, for example "billing@example.com" */
+  address: string;
+  /** The domain of the mail address in lower case, for example "example.com" */
+  domain?: string;
+}
+
+/**
+ * Splits a list of addresses like `"Doe, Jane" <jane@example.org>, john@example.org`.
+ */
+function parseMailAddresses(headerData: string | undefined): MailAddress[] {
+  if (!headerData?.trim()) {
+    return [];
+  }
+
+  // Split at commas, but not inside of quotes or angle brackets
+  const parts = headerData.match(/(?:"[^"]*"|<[^>]*>|[^,])+/g) ?? [];
+
+  return parts
+    .map((part) => part.trim())
+    .filter((part) => part)
+    .map((part) => {
+      const match = part.match(/^(.*)<([^>]*)>\s*$/);
+      const address = (match?.[2] ?? part).trim();
+      const name = match?.[1]
+        ?.trim()
+        .replace(/^"(.*)"$/, '$1')
+        .trim();
+
+      const mailAddress: MailAddress = { address };
+      if (name) {
+        mailAddress.name = name;
+      }
+
+      const indexOfAt = address.lastIndexOf('@');
+      if (indexOfAt !== -1 && indexOfAt < address.length - 1) {
+        mailAddress.domain = address.slice(indexOfAt + 1).toLowerCase();
+      }
+
+      return mailAddress;
+    });
+}
+
+/**
+ * Checks if two domains belong together, for example "bounces.example.com" and "example.com".
+ */
+function isSameOrSubdomain(domainA: string | undefined, domainB: string | undefined): boolean {
+  if (!domainA || !domainB) {
+    return false;
+  }
+
+  const a = domainA.toLowerCase();
+  const b = domainB.toLowerCase();
+
+  return a === b || a.endsWith(`.${b}`) || b.endsWith(`.${a}`);
+}
+
 export const mailHelper = {
+  parseMailAddresses,
+  isSameOrSubdomain,
   splitMailHeader,
   parseReceivedHeader,
+  filterHeaders,
 };

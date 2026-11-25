@@ -51,6 +51,10 @@ export default defineConfig((/* ctx */) => {
       // distDir
 
       extendViteConf(viteConf) {
+        // The polyfill uses "fetch", the Content-Security-Policy blocks all connections
+        viteConf.build = viteConf.build || {}
+        viteConf.build.modulePreload = { polyfill: false }
+
         viteConf.optimizeDeps = viteConf.optimizeDeps || {}
         viteConf.optimizeDeps.include = [
           ...(viteConf.optimizeDeps.include || []),

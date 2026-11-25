@@ -1,323 +1,231 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import type { QTableProps } from 'quasar';
+import { computed, ref, watch } from 'vue';
 
 import type { ReceivedHeaderParts } from '@/models/ReceivedHeaderParts';
 
+import { authenticationHelper } from '@/helpers/authenticationHelper';
 import { mailHelper } from '@/helpers/mailHelper';
 
-import LetterWithEnvelope from '@/components/LetterWithEnvelope.vue';
-import MailHeaderDetailBox from '@/components/MailHeaderDetailBox.vue';
+import AnalyzerStart from '@/components/AnalyzerStart.vue';
+import AuthenticationDetails from '@/components/AuthenticationDetails.vue';
+import HeaderTable from '@/components/HeaderTable.vue';
 import MailFlow from '@/components/MailFlow.vue';
-import MailFlowTable from '@/components/MailFlowTable.vue';
+import MailMessageCard from '@/components/MailMessageCard.vue';
+import MailVerdict from '@/components/MailVerdict.vue';
 
 const MailHeaders = {
+  ReturnPath: 'Return-Path',
   From: 'From',
   To: 'To',
-  Subject: 'Subject',
-  Received: 'Received',
   ReplyTo: 'Reply-To',
-  ReturnPath: 'Return-Path',
   MessageId: 'Message-Id',
   Date: 'Date',
-  DkimSignature: 'DKIM-Signature',
+  Subject: 'Subject',
   AuthenticationResults: 'Authentication-Results',
+  Received: 'Received',
 };
 
 const mailHeader = ref<string>();
-const filter = ref<string | undefined>();
-
-const columns: QTableProps['columns'] = [
-  {
-    name: 'headerName',
-    align: 'left',
-    label: 'Name',
-    field: 'headerName',
-    sortable: false,
-    style: 'width: 300px',
-  },
-  {
-    name: 'headerData',
-    align: 'left',
-    label: 'Data',
-    field: 'headerData',
-    sortable: false,
-    classes: 'text-break',
-  },
-  {
-    name: 'headerIndex',
-    align: 'left',
-    label: 'Index',
-    field: 'headerIndex',
-    sortable: false,
-    style: 'width: 70px',
-  },
-];
+const isEditing = ref(false);
 
 const mailHeaderParts = computed(() => {
   if (!mailHeader.value) {
-    return undefined;
+    return [];
   }
 
   try {
     return mailHelper.splitMailHeader(mailHeader.value);
   } catch (error) {
     console.error(error);
-    return undefined;
+    return [];
   }
 });
 
-const returnPathHeaders = computed(() => {
-  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.ReturnPath);
-});
+const hasResult = computed(() => mailHeaderParts.value.length > 0);
+const isInvalid = computed(() => !!mailHeader.value?.trim() && !hasResult.value);
 
-const returnPath = computed(() => {
-  if (!returnPathHeaders.value || returnPathHeaders.value.length === 0) {
-    return undefined;
-  }
+// The first line of the header, shown in the collapsed input
+const preview = computed(() => mailHeader.value?.trim().replace(/\s+/g, ' ').slice(0, 300));
 
-  return returnPathHeaders.value[0]?.headerData;
-});
+function headerValues(headerName: string): string[] {
+  return mailHelper.filterHeaders(mailHeaderParts.value, headerName).map((o) => o.headerData);
+}
 
-const fromHeaders = computed(() => {
-  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.From);
-});
+const from = computed(() => headerValues(MailHeaders.From)[0]);
+const fromDomain = computed(() => mailHelper.parseMailAddresses(from.value)[0]?.domain);
 
-const from = computed(() => {
-  if (!fromHeaders.value || fromHeaders.value.length === 0) {
-    return undefined;
-  }
+// The first header is the newest, it was added by the receiving mail server
+const authenticationResults = computed(() => headerValues(MailHeaders.AuthenticationResults));
+const authenticationSummary = computed(() =>
+  authenticationHelper.parseAuthenticationSummary(authenticationResults.value[0]),
+);
+const verdict = computed(() =>
+  authenticationHelper.getVerdict(authenticationSummary.value, fromDomain.value),
+);
 
-  return fromHeaders.value[0]?.headerData;
-});
-
-const toHeaders = computed(() => {
-  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.To);
-});
-
-const to = computed(() => {
-  if (!toHeaders.value || toHeaders.value.length === 0) {
-    return undefined;
-  }
-
-  return toHeaders.value[0]?.headerData;
-});
-
-const dateHeaders = computed(() => {
-  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.Date);
-});
-
-const messageIdHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(
-    (header) => header.headerName.toLowerCase() === MailHeaders.MessageId.toLowerCase(),
-  );
-});
-
-const subjectHeaders = computed(() => {
-  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.Subject);
-});
-
-const subject = computed(() => {
-  if (!subjectHeaders.value || subjectHeaders.value.length === 0) {
-    return undefined;
-  }
-
-  return subjectHeaders.value[0]?.headerData;
-});
-
-const receivedHeaders = computed<ReceivedHeaderParts[] | undefined>(() => {
-  if (!mailHeaderParts.value) {
-    return undefined;
-  }
-  const filteredHeaders = mailHeaderParts.value?.filter(
-    (header) => header.headerName === MailHeaders.Received,
-  );
-
-  if (!filteredHeaders) {
-    return undefined;
-  }
-
-  const items = filteredHeaders
+// The newest hop is the first header, show the hops in the order of the delivery
+const receivedHeaders = computed<ReceivedHeaderParts[]>(() => {
+  return mailHelper
+    .filterHeaders(mailHeaderParts.value, MailHeaders.Received)
     .filter((o) => o.headerData)
-    .map((headerDetail) => mailHelper.parseReceivedHeader(headerDetail));
-
-  items?.sort((a, b) => {
-    if (a.rawHeaderDetails.headerIndex && b.rawHeaderDetails.headerIndex) {
-      return b.rawHeaderDetails.headerIndex - a.rawHeaderDetails.headerIndex;
-    }
-    return -1;
-  });
-  return items;
+    .map((headerDetail) => mailHelper.parseReceivedHeader(headerDetail))
+    .reverse();
 });
 
-const replyToHeaders = computed(() => {
-  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.ReplyTo);
-});
+function clear(): void {
+  mailHeader.value = undefined;
+  isEditing.value = false;
+}
 
-const authenticationResultsHeaders = computed(() => {
-  return mailHeaderParts.value?.filter(
-    (header) => header.headerName === MailHeaders.AuthenticationResults,
-  );
-});
-
-const dkimSignatureHeaders = computed(() => {
-  return mailHeaderParts.value?.filter((header) => header.headerName === MailHeaders.DkimSignature);
-});
-
-const otherHeaders = computed(() => {
-  const ignoreHeaderNames = Object.values(MailHeaders);
-  const filteredHeaders = mailHeaderParts.value?.filter(
-    (header) => !ignoreHeaderNames.includes(header.headerName),
-  );
-
-  const filterTerm = filter.value?.toLowerCase();
-  if (filterTerm) {
-    return mailHeaderParts.value?.filter(
-      (header) =>
-        header.headerName.toLowerCase().includes(filterTerm) ||
-        header.headerData.toLowerCase().includes(filterTerm),
-    );
+watch(hasResult, (value) => {
+  if (!value) {
+    isEditing.value = false;
   }
-  return filteredHeaders;
 });
 </script>
 
 <template>
-  <q-page padding>
-    <div class="row q-col-gutter-sm">
-      <div class="col">
-        <q-input
-          v-model="mailHeader"
-          spellcheck="false"
-          placeholder="Paste email headers here"
-          outlined
-          type="textarea"
-          :rows="mailHeader ? 6 : 30"
-        />
-      </div>
-      <div v-show="mailHeader" style="width: 50px">
-        <q-btn
-          flat
-          icon="close"
-          class="cursor-pointer full-width full-height bg-red text-white"
-          @click="mailHeader = undefined"
-        />
-      </div>
-    </div>
+  <q-page class="eha-page">
+    <div class="eha-container">
+      <AnalyzerStart v-if="!hasResult" v-model="mailHeader" :invalid="isInvalid" />
 
-    <div v-if="mailHeader" class="row">
-      <div class="col-12 col-md-5">
-        <LetterWithEnvelope :to="to" :from="from" :subject="subject" :return-path="returnPath" />
-      </div>
-      <div class="col-12 col-md-7">
-        <div class="q-my-lg">
-          <div class="q-gutter-xs">
-            <MailHeaderDetailBox
-              v-if="returnPathHeaders && returnPathHeaders.length > 0"
-              name="Return-Path"
-              :details="returnPathHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-            <MailHeaderDetailBox
-              v-if="fromHeaders && fromHeaders.length > 0"
-              name="From"
-              :details="fromHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
-            <MailHeaderDetailBox
-              v-if="toHeaders && toHeaders.length > 0"
-              name="To"
-              :details="toHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
-            <MailHeaderDetailBox
-              v-if="replyToHeaders && replyToHeaders.length > 0"
-              name="Reply-To"
-              :details="replyToHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
-            <MailHeaderDetailBox
-              v-if="messageIdHeaders && messageIdHeaders.length > 0"
-              name="Message-Id"
-              :details="messageIdHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
-            <MailHeaderDetailBox
-              v-if="dateHeaders && dateHeaders.length > 0"
-              name="Date"
-              :details="dateHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
-            <MailHeaderDetailBox
-              v-if="subjectHeaders && subjectHeaders.length > 0"
-              name="Subject"
-              :details="subjectHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
-
-            <MailHeaderDetailBox
-              v-if="authenticationResultsHeaders && authenticationResultsHeaders.length > 0"
-              name="Authentication-Results"
-              :details="authenticationResultsHeaders.map((o) => o.headerData)"
-              :preformatted="true"
-            />
-
-            <MailHeaderDetailBox
-              v-if="dkimSignatureHeaders && dkimSignatureHeaders.length > 0"
-              name="Dkim Signature"
-              :details="dkimSignatureHeaders?.map((o) => o.headerData)"
-              :preformatted="false"
-            />
+      <div v-else class="eha-stack">
+        <section class="eha-card input-bar" aria-label="Email header">
+          <div class="input-bar-summary">
+            <div class="input-bar-title">Email header · {{ mailHeaderParts.length }} fields</div>
+            <div v-if="!isEditing" class="eha-mono eha-muted input-bar-preview">{{ preview }}</div>
           </div>
-        </div>
-      </div>
-    </div>
-    <div v-if="mailHeader">
-      <h2>Mail Hops</h2>
-      <div v-if="receivedHeaders" class="q-mt-sm">
-        <MailFlow :received-headers="receivedHeaders" />
-        <MailFlowTable :received-headers="receivedHeaders" />
-      </div>
+          <div class="input-bar-actions">
+            <button
+              type="button"
+              class="eha-button"
+              :aria-expanded="isEditing"
+              @click="isEditing = !isEditing"
+            >
+              {{ isEditing ? 'Done' : 'Edit' }}
+            </button>
+            <button type="button" class="eha-button eha-button-quiet" @click="clear">Clear</button>
+          </div>
+          <div v-if="isEditing" class="input-bar-editor">
+            <label for="header-edit" class="eha-sr-only">Email header</label>
+            <textarea
+              id="header-edit"
+              v-model="mailHeader"
+              rows="8"
+              spellcheck="false"
+              class="eha-input input-bar-textarea"
+            ></textarea>
+          </div>
+        </section>
 
-      <h2>Other Headers</h2>
-      <q-table
-        v-if="otherHeaders"
-        flat
-        bordered
-        wrap-cells
-        :rows-per-page-options="[0]"
-        :rows="otherHeaders"
-        :columns="columns"
-        class="full-width"
-        table-style="min-height: 400px;"
-      >
-        <template #top>
-          <q-input
-            v-model="filter"
-            outlined
-            dense
-            debounce="100"
-            placeholder="Search"
-            class="full-width"
-            :bg-color="filter ? 'grey-3' : ''"
-          >
-            <template #append>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-        </template>
-      </q-table>
+        <MailVerdict
+          :summary="authenticationSummary"
+          :from-domain="fromDomain"
+          :received-headers="receivedHeaders"
+        />
+
+        <div class="analyzer-columns">
+          <MailMessageCard
+            class="analyzer-message"
+            :subject="headerValues(MailHeaders.Subject)[0]"
+            :from="from"
+            :to="headerValues(MailHeaders.To)[0]"
+            :reply-to="headerValues(MailHeaders.ReplyTo)[0]"
+            :date="headerValues(MailHeaders.Date)[0]"
+            :return-path="headerValues(MailHeaders.ReturnPath)[0]"
+            :message-id="headerValues(MailHeaders.MessageId)[0]"
+            :sender-not-confirmed="verdict.level === 'failed'"
+          />
+          <MailFlow
+            class="analyzer-route"
+            :received-headers="receivedHeaders"
+            :spf="authenticationSummary.spf"
+          />
+        </div>
+
+        <AuthenticationDetails
+          v-if="authenticationResults.length > 0"
+          :summary="authenticationSummary"
+          :header-count="authenticationResults.length"
+        />
+
+        <HeaderTable :headers="mailHeaderParts" />
+      </div>
     </div>
   </q-page>
 </template>
 
 <style scoped>
-:deep(.text-break) {
-  word-break: break-all;
+.input-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 12px 12px 20px;
+  border-radius: 12px;
+}
+
+.input-bar-summary {
+  flex: 999 1 240px;
+  min-width: 0;
+}
+
+.input-bar-title {
+  color: var(--eha-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.input-bar-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.input-bar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.input-bar-editor {
+  flex: 1 1 100%;
+}
+
+.input-bar-textarea {
+  display: block;
+  padding: 12px;
+  font-family: var(--eha-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.analyzer-columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.analyzer-message {
+  flex: 1 1 380px;
+}
+
+.analyzer-route {
+  flex: 1.3 1 480px;
+}
+
+@media (max-width: 599px) {
+  .input-bar {
+    padding: 6px 6px 6px 14px;
+  }
+
+  .input-bar-preview {
+    display: none;
+  }
+
+  .analyzer-columns {
+    gap: 16px;
+  }
 }
 </style>

@@ -27,6 +27,13 @@ pnpm run lint:check
 # or: yarn/npm/bun run lint:check
 ```
 
+### Run the tests
+
+```bash
+pnpm run test
+# or: yarn/npm/bun run test
+```
+
 ### Build the app for production
 
 ```bash

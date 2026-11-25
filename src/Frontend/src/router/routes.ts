@@ -6,9 +6,10 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/MainLayout.vue'),
     children: [
       {
+        // The analyzer is the start page
         name: 'home',
         path: '',
-        component: () => import('@/pages/IndexPage.vue'),
+        redirect: { name: 'analyzer' },
       },
       {
         name: 'analyzer',

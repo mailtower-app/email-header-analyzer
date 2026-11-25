@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  build-spa:
+  test-spa:
 
     runs-on: ubuntu-latest
     env:
@@ -23,25 +23,13 @@ jobs:
     - name: Clean slate
       run: npm ci
       working-directory: ${{env.working-directory}}
-    - name: Install quasar
-      run: npm install -g @quasar/cli
+    - name: Test
+      run: npm test
       working-directory: ${{env.working-directory}}
-    - name: Build
-      run: quasar build
-      working-directory: ${{env.working-directory}}
-    - name: Upload artifact
-      uses: actions/upload-artifact@v7
-      with:
-        # Artifact name
-        name: spa
-        # Directory containing files to upload
-        path: ${{env.working-directory}}/dist/spa/
-        # Days before delete
-        retention-days: 1
-        
+
   build-docker-spa:
 
-    needs: [build-spa]
+    needs: [test-spa]
     runs-on: ubuntu-latest
 
     permissions:
@@ -50,11 +38,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
-    - name: Download artifact
-      uses: actions/download-artifact@v8
-      with:
-        name: spa
-        path: spa
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v4
       with:

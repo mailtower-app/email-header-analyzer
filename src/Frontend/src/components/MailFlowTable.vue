@@ -20,14 +20,14 @@ const delays = computed(() => {
     const currentDate = myProps.receivedHeaders[i]?.dateTime;
 
     if (!previousDate || !currentDate) {
-      differences.push(0);
+      differences.push(undefined);
       continue;
     }
 
     const diffInMs = currentDate.getTime() - previousDate.getTime();
-    const diffInMinutes = diffInMs / 1000;
+    const diffInSeconds = diffInMs / 1000;
 
-    differences.push(diffInMinutes);
+    differences.push(diffInSeconds);
   }
 
   return differences;
